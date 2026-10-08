@@ -1,0 +1,48 @@
+name: Bug report
+description: Report core or port behavior that is wrong
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Report security vulnerabilities privately as described in SECURITY.md, not here.
+  - type: input
+    id: target
+    attributes:
+      label: Target
+      description: The port and platform, with the OS or board.
+      placeholder: POSIX port on Ubuntu 24.04
+    validations:
+      required: true
+  - type: input
+    id: toolchain
+    attributes:
+      label: Compiler and build system
+      placeholder: GCC 13.3, CMake 3.28
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The release or the commit you built (`git rev-parse --short HEAD`).
+      placeholder: 0.1.0 at 58d231d
+    validations:
+      required: true
+  - type: input
+    id: broker
+    attributes:
+      label: MQTT broker
+      placeholder: mosquitto 2.0.18
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Steps to reproduce, what you expected, and what happened instead. A failing test or a short program that reproduces it is the most useful.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: The core's log output, the failing build or test output, or the MQTT traffic (`mosquitto_sub -v -t '#'`). Remove broker passwords.
+      render: text
