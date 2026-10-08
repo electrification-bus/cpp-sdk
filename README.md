@@ -14,6 +14,16 @@ A portable C++17 core for devices and controllers on the [Electrification Bus](h
 | ESP32 (Arduino framework, PlatformIO) | [esp32-sdk](https://github.com/electrification-bus/esp32-sdk) | arduino-mqtt |
 | POSIX (Linux, macOS) | [`ports/posix/`](ports/posix/) in this repository | Eclipse Paho MQTT C |
 
+## Status
+
+Version 0.1.0, alpha. Known limits:
+
+- The POSIX demo build has no TLS; it connects to plain-TCP brokers only.
+- After a broker loses its retained messages, a reconnect re-asserts `$state` but not `$description` (see the POSIX port's [Known gaps](ports/posix/README.md#known-gaps); esp32-sdk has the same gap).
+- The driver contract (`NodeEntity`, `NodeProperty`) is still in esp32-sdk ([why](doc/core.md#still-in-esp32-sdk)).
+- The code-first API has rough edges found while writing the POSIX demo: registering a settable property needs a live connection, the controller has no change callback, and float values are always formatted with `%f`.
+- esp32-sdk is not public yet; links to it will resolve once it is.
+
 ## Quick start: the POSIX demo
 
 You need CMake 3.18 or later, a C++17 compiler (GCC or Clang), and, for the end-to-end tests, `mosquitto` (Homebrew: `brew install mosquitto`; Debian/Ubuntu: `apt-get install mosquitto`).
