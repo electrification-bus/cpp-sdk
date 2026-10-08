@@ -91,5 +91,5 @@ The core needs C++17; `build_unflags` drops the gnu++11 default of arduino-esp32
 
 Split out of [esp32-sdk](https://github.com/electrification-bus/esp32-sdk), with its history. Developed by:
 
-- **Donald Clark Jackson** ([@dcj](https://github.com/dcj)), Clark Communications Corporation
-- **Doug Mendonça** ([@nesl-admin](https://github.com/nesl-admin)), New Energy Solutions Lab
+- **Lead developer:** Doug Mendonça ([@nesl-admin](https://github.com/nesl-admin)), New Energy Solutions Lab, [doug@newenergysolutionslab.com](mailto:doug@newenergysolutionslab.com). Primary author of the firmware this code was split from, and a significant contributor to the eBus protocol and ecosystem more broadly.
+- **Project owner:** Donald Clark Jackson ([@dcj](https://github.com/dcj)), Clark Communications Corporation, [dcj@clark-communications.com](mailto:dcj@clark-communications.com). Project direction and documentation.
