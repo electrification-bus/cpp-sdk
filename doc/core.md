@@ -1,6 +1,6 @@
 # ebus_core
 
-The portable part of the eBus / Homie 5 SDK: the Homie device model, `/set` dispatch and the controller, depending on the C and C++ standard libraries and ArduinoJson, with no Arduino, ESP-IDF or FreeRTOS header. It is the seed of a standalone C++ SDK for other MCUs and operating systems (Zephyr, FreeRTOS on STM32 or NXP, embedded Linux). A port supplies the MQTT client, the console and the clock through the interfaces below.
+The portable part of the eBus / Homie 5 SDK: the Homie device model, `/set` dispatch and the controller, depending on the C and C++ standard libraries and ArduinoJson, with no Arduino, ESP-IDF or FreeRTOS header. It targets other MCUs and operating systems too (Zephyr, FreeRTOS on STM32 or NXP, embedded Linux). A port supplies the MQTT client, the console and the clock through the interfaces below.
 
 | Header | Contents |
 |---|---|
@@ -12,7 +12,7 @@ The portable part of the eBus / Homie 5 SDK: the Homie device model, `/set` disp
 | `homie/homie_clock.h` | `homie_now_ms()` / `homie_sleep_ms()` and the hooks a port binds |
 | `homie/homie_json.h`, `util/jsonUtils.h` | `$description` (de)serialization helpers (ArduinoJson) |
 | `homie/homie.h` | Homie version, topic domain and prefix (`USE_EBUS_TOPIC` at build time, `homie_set_topic_domain()` at run time), datatype and attribute strings |
-| `homie/homie_limits.h` | Longest ids and topics; every buffer is sized from these. `./ebus-esp32 generate` reads this file to check `device.yml` |
+| `homie/homie_limits.h` | Longest ids and topics; every buffer is sized from these. esp32-sdk's `./ebus-esp32 generate` reads this file to check `device.yml` |
 | `homie/homie_enums.h` | `PropertyDatatype` and `Unit` enums and their Homie strings |
 | `homie/homie_descriptor.h` | `PropertyDesc`, the declarative property descriptor |
 | `homie/homie_id.h` | Id sanitizing, MAC-based ids, id templates, child ids |
@@ -24,7 +24,7 @@ The portable part of the eBus / Homie 5 SDK: the Homie device model, `/set` disp
 
 ## What a port implements
 
-| Piece | Contract | ESP32 port |
+| Piece | Contract | ESP32 port ([esp32-sdk](https://github.com/electrification-bus/esp32-sdk)) |
 |---|---|---|
 | MQTT transport | A `HomieTransport` subclass. `publish()` and `subscribe()` run on the task that owns the client and never inside its receive callback. `queue_publish()` may be called from any task and must call `source->queued_publish_done(payload, length, sent)` exactly once per call when `source` is set, including when it fails. `last_error()` is for logs only. | `MqttClientTransport` in `include/platform/mqtt_client.h`, over arduino-mqtt and the FreeRTOS publish queue; the instance is `mqtt_transport` |
 | Clock | `homie_clock_bind(now_ms, sleep_ms)`. Required: unbound, the tick reads 0 and the sleep returns at once. | `millis()` / `delay()`, bound in `src/platform/homie_port.cpp` |
@@ -36,7 +36,7 @@ The portable part of the eBus / Homie 5 SDK: the Homie device model, `/set` disp
 
 The controller needs `controller_init(&transport, ...)` and the receive callback passing every message the settable table does not claim to `controller_mqtt_callback()`.
 
-The POSIX port in `ports/posix/` implements the same pieces over Eclipse Paho MQTT C; its README maps each one.
+The POSIX port in [`ports/posix/`](../ports/posix/) implements the same pieces over Eclipse Paho MQTT C; its README maps each one.
 
 ## Rules for code in the core
 
@@ -47,26 +47,27 @@ The POSIX port in `ports/posix/` implements the same pieces over Eclipse Paho MQ
 
 ## Building
 
-**PlatformIO** links it automatically: `library.json` makes `lib/ebus_core` a library and declares its ArduinoJson dependency, and the dependency finder adds it to any build that includes one of its headers. `[env:native]` lists it in `lib_deps` for the host unit tests in `test/native/`. A library is compiled without the project's `build_src_flags`, so a macro the core reads (`MAX_DATA_LEN`, `CONTROLLER_INBOX_BYTES`, `USE_EBUS_TOPIC`) must be set in `build_flags`.
+**PlatformIO**: `library.json` makes this repository a library that declares its ArduinoJson dependency and compiles only `include/` and `src/`; a project adds it with a `lib_deps` git URL. A library is compiled without the project's `build_src_flags`, so a macro the core reads (`MAX_DATA_LEN`, `CONTROLLER_INBOX_BYTES`, `USE_EBUS_TOPIC`) must be set in `build_flags`.
 
 **CMake**, for any other build system or host:
 
 ```bash
-cmake -S lib/ebus_core -B lib/ebus_core/build
-cmake --build lib/ebus_core/build
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build --output-on-failure
 ```
 
-A parent project uses `add_subdirectory(<path>/ebus_core)` and links the `ebus_core` target, which carries its include directory, C++17 and ArduinoJson. A parent that already defines an `ArduinoJson` target keeps it; otherwise `FetchContent` downloads ArduinoJson 7.4.3, the release `platformio.ini` uses, checked against its SHA-256, so both builds serialize `$description` with the same code. `find_package()` was not used because few systems package ArduinoJson and none would pin that release. To build offline, pass `-DFETCHCONTENT_SOURCE_DIR_ARDUINOJSON=<checkout>`. `-DEBUS_CORE_EBUS_TOPIC=ON` defines `USE_EBUS_TOPIC`, which moves the topic root from `homie/5` to `ebus/5`; the ESP32 firmware sets it in `platformio.ini`. Built as the top-level project, the target `ebus_core_header_check` also compiles each public header in a translation unit of its own.
+A parent project uses `add_subdirectory(<path>/cpp-sdk)` and links the `ebus_core` target, which carries its include directory, C++17 and ArduinoJson. A parent that already defines an `ArduinoJson` target keeps it; otherwise `FetchContent` downloads ArduinoJson 7.4.3, the release esp32-sdk's `platformio.ini` uses, checked against its SHA-256, so both builds serialize `$description` with the same code. `find_package()` was not used because few systems package ArduinoJson and none would pin that release. To build offline, pass `-DFETCHCONTENT_SOURCE_DIR_ARDUINOJSON=<checkout>`. `-DEBUS_CORE_EBUS_TOPIC=ON` defines `USE_EBUS_TOPIC`, which moves the topic root from `homie/5` to `ebus/5`; the ESP32 firmware sets it in `platformio.ini`. Built as the top-level project, the target `ebus_core_header_check` also compiles each public header in a translation unit of its own, and the Unity suites in `test/` are built and registered with CTest (`-DEBUS_CORE_TESTS=OFF` skips them).
 
-CI (`core-host-build` in `.github/workflows/build.yml`) runs that CMake build with GCC and Clang, warnings as errors, and only the core's include directory and ArduinoJson on the path.
+CI (`core-host-build` in `.github/workflows/ci.yml`) runs that CMake build with GCC and Clang, warnings as errors, and only the core's include directory and ArduinoJson on the path.
 
 ## Include paths
 
-The headers keep the paths they had under the project's `include/` (`<homie/Device.h>`, `<util/jsonUtils.h>`, `<platform/broker_discovery.h>`), so no `#include` in the firmware changed when they moved. `platform/` and `util/` are the wrong names for a portable library; rename them (to `ebus/`, say) in one sweep when the core becomes its own repository.
+The headers keep the paths they had under the project's `include/` (`<homie/Device.h>`, `<util/jsonUtils.h>`, `<platform/broker_discovery.h>`), so no `#include` in esp32-sdk changed when they moved. `platform/` and `util/` are the wrong names for a portable library; renaming them (to `ebus/`, say) takes one sweep here and in esp32-sdk.
 
-## Still in the firmware
+## Still in esp32-sdk
 
-`NodeEntity` and `NodeProperty` (`include/node/`, `src/node/`), the driver contract, stay in `src/` for two reasons. `include/node/NodeEntity.h` includes `platform/log_stream.h`, which is what routes every `lib/` driver's `Serial.printf()` through the UART + TCP tee; moving it needs a replacement for that include that keeps the tee. And both resolve properties against `theDevice` and `g_active_setup_device` (`include/homie/homie_globals.h`), globals the application defines in `src/platform/config.cpp`.
+`NodeEntity` and `NodeProperty` (esp32-sdk's `include/node/`, `src/node/`), the driver contract, stay in the firmware for two reasons. `include/node/NodeEntity.h` includes `platform/log_stream.h`, which is what routes every `lib/` driver's `Serial.printf()` through the UART + TCP tee; moving it needs a replacement for that include that keeps the tee. And both resolve properties against `theDevice` and `g_active_setup_device` (`include/homie/homie_globals.h`), globals the application defines in `src/platform/config.cpp`.
 
 ## Next step
 

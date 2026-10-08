@@ -1,4 +1,4 @@
-// Host-side tests for lib/ebus_core/src/homie/homie_id.cpp. The id rule comes from the
+// Host-side tests for src/homie/homie_id.cpp. The id rule comes from the
 // Homie 5 convention, section "Topic IDs": only lowercase a-z, digits 0-9 and the hyphen.
 
 #include <unity.h>

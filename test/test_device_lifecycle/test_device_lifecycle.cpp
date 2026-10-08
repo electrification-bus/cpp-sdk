@@ -4,7 +4,7 @@
 // is either init, disconnected, or lost", and "Adding children" (publish the child
 // init -> details -> ready, then the parent init -> description with the child -> ready).
 //
-// The real Device, Node and Property (lib/ebus_core) publish through a FakeTransport that
+// The real Device, Node and Property (the core) publish through a FakeTransport that
 // records every publish. Each node the tests add carries one property, `value` = "v".
 
 #include <unity.h>

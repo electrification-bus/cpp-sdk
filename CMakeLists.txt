@@ -1,5 +1,5 @@
 # Builds the core without PlatformIO, for Zephyr, embedded Linux, or a host check.
-# Usage from a parent project: add_subdirectory(path/to/ebus_core) and link ebus_core.
+# Usage from a parent project: add_subdirectory(path/to/cpp-sdk) and link ebus_core.
 cmake_minimum_required(VERSION 3.18)
 project(ebus_core LANGUAGES CXX)
 
@@ -25,8 +25,9 @@ target_compile_features(ebus_core PUBLIC cxx_std_17)
 
 # ArduinoJson, the core's one dependency (header-only). A parent project that already has
 # an ArduinoJson target keeps it. Otherwise the release PlatformIO uses (library.json,
-# platformio.ini) is fetched, pinned by hash, so both builds serialize identically; to
-# build offline, point -DFETCHCONTENT_SOURCE_DIR_ARDUINOJSON=<dir> at a checkout of it.
+# esp32-sdk's platformio.ini) is fetched, pinned by hash, so both builds serialize
+# identically; to build offline, point -DFETCHCONTENT_SOURCE_DIR_ARDUINOJSON=<dir> at a
+# checkout of it.
 if(NOT TARGET ArduinoJson)
     if(POLICY CMP0135)
         cmake_policy(SET CMP0135 NEW)   # extracted files get the extraction time
@@ -75,4 +76,11 @@ if(EBUS_CORE_CHECK_HEADERS)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         target_compile_options(ebus_core_header_check PRIVATE -Wall -Wextra)
     endif()
+endif()
+
+# The Unity suites in test/, one CTest test each. Off when the core is a subproject.
+option(EBUS_CORE_TESTS "Build the core's unit tests (fetches Unity)" ${_ebus_core_top_level})
+if(EBUS_CORE_TESTS)
+    enable_testing()
+    add_subdirectory(test)
 endif()

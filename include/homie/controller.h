@@ -14,7 +14,7 @@
 // Bytes held for messages between the MQTT receive callback and controller_loop(). It
 // must hold the largest message the client accepts (a MAX_DATA_LEN $description), and
 // what is left over holds the values that arrive with it. Override with
-// -DCONTROLLER_INBOX_BYTES=<n> in build_flags (this file's .cpp is in lib/ebus_core, which
+// -DCONTROLLER_INBOX_BYTES=<n> in build_flags (this file's .cpp is in a library, which
 // build_src_flags does not reach).
 #ifndef CONTROLLER_INBOX_BYTES
 #define CONTROLLER_INBOX_BYTES 16384

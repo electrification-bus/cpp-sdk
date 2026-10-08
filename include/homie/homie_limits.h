@@ -4,8 +4,9 @@
 // fits all of them: the property topic, its /set and $target forms, the publish queue
 // item and the settable table entry.
 //
-// ./ebus-esp32 generate reads the four base values and refuses a device.yml whose ids or
-// topics exceed them, so each must stay a plain integer literal on its own #define line.
+// esp32-sdk's ./ebus-esp32 generate reads the four base values and refuses a device.yml
+// whose ids or topics exceed them, so each must stay a plain integer literal on its own
+// #define line.
 
 #define HOMIE_DEVICE_ID_MAX    63    // a root or child device id
 #define HOMIE_NODE_ID_MAX      31

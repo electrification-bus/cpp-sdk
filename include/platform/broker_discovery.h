@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 // Arduino-free pieces of mDNS broker discovery, shared by the firmware (config.cpp,
-// network.cpp, mqtt_client.cpp) and the host tests in test/native/test_broker_discovery.
+// network.cpp, mqtt_client.cpp) and the host tests in test/test_broker_discovery.
 
 // Broker service types from the eBus specification (framework.md, "MQTT Broker
 // Advertisement" and "Broker Discovery"). The spelling is the DNS-SD service name without

@@ -4,7 +4,7 @@
 #include <homie/homie_limits.h>
 
 // Arduino-free pieces of the Homie controller (src/homie/controller.cpp), shared with the
-// host tests in test/native/test_controller_inbox: the inbox that carries messages out of
+// host tests in test/test_controller_inbox: the inbox that carries messages out of
 // the MQTT receive callback, and the topic parser.
 
 // A domain is part of the "<domain>/<version>" prefix, so it is never longer than it.

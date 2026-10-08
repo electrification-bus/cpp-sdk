@@ -10,7 +10,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(EBUS_POSIX_WERROR "Treat warnings in the port, the demos and the tests as errors" OFF)
 option(EBUS_POSIX_TESTS "Build the tests" ON)
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../lib/ebus_core ebus_core)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../.. ebus_core)
 
 find_package(Threads REQUIRED)
 
