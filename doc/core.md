@@ -59,7 +59,7 @@ ctest --test-dir build --output-on-failure
 
 A parent project uses `add_subdirectory(<path>/cpp-sdk)` and links the `ebus_core` target, which carries its include directory, C++17 and ArduinoJson. A parent that already defines an `ArduinoJson` target keeps it; otherwise `FetchContent` downloads ArduinoJson 7.4.3, the release esp32-sdk's `platformio.ini` uses, checked against its SHA-256, so both builds serialize `$description` with the same code. `find_package()` was not used because few systems package ArduinoJson and none would pin that release. To build offline, pass `-DFETCHCONTENT_SOURCE_DIR_ARDUINOJSON=<checkout>`. `-DEBUS_CORE_EBUS_TOPIC=ON` defines `USE_EBUS_TOPIC`, which moves the topic root from `homie/5` to `ebus/5`; the ESP32 firmware sets it in `platformio.ini`. Built as the top-level project, the target `ebus_core_header_check` also compiles each public header in a translation unit of its own, and the Unity suites in `test/` are built and registered with CTest (`-DEBUS_CORE_TESTS=OFF` skips them).
 
-CI (`core-host-build` in `.github/workflows/ci.yml`) runs that CMake build with GCC and Clang, warnings as errors, and only the core's include directory and ArduinoJson on the path.
+CI (`core-host-build` in `.github/workflows/ci.yml`) runs that CMake build and the tests with GCC and Clang, warnings as errors, and only the core's include directory and ArduinoJson on the core's path.
 
 ## Include paths
 
