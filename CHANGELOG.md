@@ -4,6 +4,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-09
+
 ### Added
 
 - `ebus_mqtt`, a CMake target with no dependency (`mqtt/`, [doc/mqtt.md](doc/mqtt.md)): `MqttTransport`, the transport interface, whose `queue_publish()` takes a QoS and a completion callback (`mqtt_publish_done_fn` and a `void*` context); `PublishHold`, the disconnected-link rules, moved from the POSIX port; and `mqtt_after_connect()`, which runs the reconnect order (flush, re-subscribe, notify). `ebus_core` links it. PlatformIO still builds one library.
@@ -24,5 +26,6 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 - The core's Unity suites, built and run with CMake and CTest.
 - `library.json`, so a PlatformIO project can add the core with a `lib_deps` git URL.
 
-[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/electrification-bus/cpp-sdk/releases/tag/v0.1.0
