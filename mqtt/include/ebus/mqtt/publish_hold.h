@@ -7,23 +7,36 @@
 //   - not retained, QoS 1 or 2: held in order, one entry per publish.
 //   - not retained, QoS 0: dropped.
 //
-// Bounded: when full, the oldest entry is evicted. Fixed storage, no allocation. Not
-// thread-safe: the thread that owns the MQTT client is the only one that touches it.
-#include <homie/homie_limits.h>
+// Bounded: when full, the oldest entry is evicted. Fixed storage in the object, no
+// allocation; declare it static, not on a stack. Not thread-safe: only the task that owns
+// the MQTT client touches it.
+//
+// The sizes below set the object's layout, so a -D that overrides one must reach every
+// translation unit that includes this header (PlatformIO build_flags, or a PUBLIC
+// compile definition on the ebus_mqtt CMake target), not only this library's sources.
 #include <stdint.h>
 
-#ifndef EBUS_POSIX_HOLD_ENTRIES
-#define EBUS_POSIX_HOLD_ENTRIES 64
+#ifndef EBUS_MQTT_HOLD_ENTRIES
+#define EBUS_MQTT_HOLD_ENTRIES 64
 #endif
-// Longest payload held. Property values are at most Property::VALUE_MAX (256); a longer
-// payload (a $description) published while the link is down is dropped and logged.
-#ifndef EBUS_POSIX_HOLD_PAYLOAD_MAX
-#define EBUS_POSIX_HOLD_PAYLOAD_MAX 1024
+// Longest topic held, in characters. A Homie topic is at most HOMIE_TOPIC_MAX (127).
+#ifndef EBUS_MQTT_HOLD_TOPIC_MAX
+#define EBUS_MQTT_HOLD_TOPIC_MAX 127
+#endif
+// Longest payload held, in bytes. A longer one (a Homie $description) is dropped.
+#ifndef EBUS_MQTT_HOLD_PAYLOAD_MAX
+#define EBUS_MQTT_HOLD_PAYLOAD_MAX 1024
 #endif
 
 class PublishHold {
  public:
-    enum Result { HELD, REPLACED, DROPPED_QOS0, DROPPED_TOO_LARGE };
+    enum Result {
+        HELD,
+        REPLACED,          // a held retained value for the same topic was replaced
+        EVICTED_OLDEST,    // held, after evicting the oldest entry to make room
+        DROPPED_QOS0,
+        DROPPED_TOO_LARGE  // topic or payload over the limits above
+    };
 
     // Sends one held publish on a live link. Returns true when the entry is done with
     // (sent, or refused for good), false to keep it held and stop the flush.
@@ -48,13 +61,13 @@ class PublishHold {
         int qos = 0;
         int length = 0;
         uint32_t seq = 0;
-        char topic[HOMIE_TOPIC_MAX + 1] = {0};
-        char payload[EBUS_POSIX_HOLD_PAYLOAD_MAX] = {0};
+        char topic[EBUS_MQTT_HOLD_TOPIC_MAX + 1] = {0};
+        char payload[EBUS_MQTT_HOLD_PAYLOAD_MAX] = {0};
     };
 
     int oldest() const;
 
-    Entry _entries[EBUS_POSIX_HOLD_ENTRIES];
+    Entry _entries[EBUS_MQTT_HOLD_ENTRIES];
     int _count = 0;
     uint32_t _next_seq = 0;
     uint32_t _evicted = 0;

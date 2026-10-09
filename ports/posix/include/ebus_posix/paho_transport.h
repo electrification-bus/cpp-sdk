@@ -12,13 +12,16 @@
 // inbound arena, the queue_publish() ring and the disconnected-link hold. Declare the
 // transport static, not on a stack. Paho allocates per in-flight message internally,
 // bounded by its in-flight window.
-#include <ebus_posix/publish_hold.h>
+#include <ebus/mqtt/publish_hold.h>
 #include <homie/controller_inbox.h>
 #include <homie/homie_transport.h>
 #include <homie/Property.h>
 #include <atomic>
 #include <mutex>
 #include <stdint.h>
+
+static_assert(EBUS_MQTT_HOLD_TOPIC_MAX >= HOMIE_TOPIC_MAX,
+              "the publish hold must take every Homie topic");
 
 #ifndef EBUS_POSIX_INBOX_BYTES
 #define EBUS_POSIX_INBOX_BYTES (64 * 1024)
@@ -69,10 +72,11 @@ class PahoTransport final : public HomieTransport {
     // HomieTransport. publish() and subscribe(): loop() thread only. While the link is
     // down publish() holds or drops the message (see PublishHold) and returns false.
     using HomieTransport::publish;
+    using HomieTransport::queue_publish;
     bool publish(const char* topic, const char* payload, int length, bool retained,
                  int qos) override;
     bool queue_publish(const char* topic, const char* payload, int length, bool retained,
-                       Property* source) override;
+                       int qos, mqtt_publish_done_fn done, void* ctx) override;
     bool subscribe(const char* topic, int qos) override;
     bool connected() override;
     int last_error() override { return _last_error; }
@@ -86,12 +90,17 @@ class PahoTransport final : public HomieTransport {
         char payload[Property::VALUE_MAX];
         int length;
         bool retained;
-        Property* source;
+        int qos;
+        mqtt_publish_done_fn done;
+        void* ctx;
     };
 
     friend struct PahoCallbacks;   // Paho's callbacks, in paho_transport.cpp
+    // The steps of mqtt_after_connect(), in paho_transport.cpp.
     static bool send_held(void* ctx, const char* topic, const char* payload, int length,
                           bool retained, int qos);
+    static bool resubscribe_all(void* ctx);
+    static void notify_connected(void* ctx, bool first);
 
     bool try_connect();
     bool send(const char* topic, const char* payload, int length, bool retained, int qos);
@@ -120,6 +129,7 @@ class PahoTransport final : public HomieTransport {
     bool _was_up = false;
     bool _stopped = false;
     bool _attempted = false;
+    int _held_at_connect = 0;
     uint32_t _next_attempt_ms = 0;
     int _last_error = 0;
 

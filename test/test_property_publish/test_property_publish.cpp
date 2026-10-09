@@ -116,7 +116,8 @@ static void test_queued_publish_is_not_gated_while_in_flight(void) {
     TEST_ASSERT_TRUE(p.publish_queued());
     TEST_ASSERT_EQUAL_INT(1, t.count_of(FakeTransport::QUEUED));
     const FakeTransport::Record* q = t.nth(FakeTransport::QUEUED, 0);
-    TEST_ASSERT_EQUAL_PTR(&p, q->source);
+    TEST_ASSERT_EQUAL_PTR(&p, q->ctx);
+    TEST_ASSERT_NOT_NULL(q->done);
     TEST_ASSERT_EQUAL_STRING("80", q->payload);
     TEST_ASSERT_EQUAL_INT(2, q->qos);
     TEST_ASSERT_EQUAL_UINT32(1, p.queued_count());
@@ -125,9 +126,9 @@ static void test_queued_publish_is_not_gated_while_in_flight(void) {
     TEST_ASSERT_TRUE(p.publish_queued());
     TEST_ASSERT_EQUAL_INT(2, t.count_of(FakeTransport::QUEUED));
 
-    // The queue reports both as sent; now the gate holds.
-    p.queued_publish_done("80", 2, true);
-    p.queued_publish_done("80", 2, true);
+    // The queue reports both as sent, through the adapter's callback; now the gate holds.
+    q->done(q->ctx, "80", 2, true);
+    t.nth(FakeTransport::QUEUED, 1)->done(q->ctx, "80", 2, true);
     TEST_ASSERT_TRUE(p.publish_queued());
     TEST_ASSERT_EQUAL_INT(2, t.count_of(FakeTransport::QUEUED));
     TEST_ASSERT_EQUAL_STRING("80", p.last_published());
@@ -141,6 +142,67 @@ static void test_refused_queue_publish_is_not_counted(void) {
 
     TEST_ASSERT_FALSE(p.publish_queued());
     TEST_ASSERT_EQUAL_UINT32(0, p.queued_count());
+}
+
+// A port written before ebus_mqtt overrides only the Property overload (esp32-sdk's
+// MqttClientTransport does); Property's queued publish must still reach it.
+class PropertyQueueTransport final : public HomieTransport {
+ public:
+    Property* source = nullptr;
+    int queued = 0;
+
+    using HomieTransport::publish;
+    bool publish(const char*, const char*, int, bool, int) override { return true; }
+    bool queue_publish(const char*, const char* payload, int length, bool,
+                       Property* src) override {
+        queued++;
+        source = src;
+        if (src) src->queued_publish_done(payload, length, true);
+        return true;
+    }
+    bool subscribe(const char*, int) override { return true; }
+    bool connected() override { return true; }
+    int last_error() override { return 0; }
+};
+
+// Overrides neither queue_publish(): the default refuses and still reports back.
+class NoQueueTransport final : public HomieTransport {
+ public:
+    using HomieTransport::publish;
+    bool publish(const char*, const char*, int, bool, int) override { return true; }
+    bool subscribe(const char*, int) override { return true; }
+    bool connected() override { return true; }
+    int last_error() override { return 0; }
+};
+
+static void test_property_overload_override_still_receives_queued_publishes(void) {
+    static Property p;
+    add(p, "amps", "integer");
+    PropertyQueueTransport legacy;
+    p.setMQTTClient(&legacy);
+    p.setValue(7);
+
+    TEST_ASSERT_TRUE(p.publish_queued());
+    TEST_ASSERT_EQUAL_INT(1, legacy.queued);
+    TEST_ASSERT_EQUAL_PTR(&p, legacy.source);
+    TEST_ASSERT_EQUAL_STRING("7", p.last_published());
+    TEST_ASSERT_TRUE(p.publish_queued());   // sent and memoized: gated
+    TEST_ASSERT_EQUAL_INT(1, legacy.queued);
+    p.setMQTTClient(&t);
+}
+
+static void test_transport_without_a_queue_refuses_and_reports(void) {
+    static Property p;
+    add(p, "watts", "integer");
+    NoQueueTransport none;
+    p.setMQTTClient(&none);
+    p.setValue(9);
+
+    TEST_ASSERT_FALSE(p.publish_queued());
+    TEST_ASSERT_EQUAL_UINT32(0, p.queued_count());
+    TEST_ASSERT_NULL(p.last_published());
+    TEST_ASSERT_NOT_NULL(strstr(g_log.last_error, "implements no queue_publish()"));
+    p.setMQTTClient(&t);
 }
 
 static void test_subscribe_registers_the_set_topic_at_qos_0(void) {
@@ -194,6 +256,8 @@ int main(int argc, char** argv) {
     RUN_TEST(test_clear_value_retracts_and_forgets_the_memo);
     RUN_TEST(test_queued_publish_is_not_gated_while_in_flight);
     RUN_TEST(test_refused_queue_publish_is_not_counted);
+    RUN_TEST(test_property_overload_override_still_receives_queued_publishes);
+    RUN_TEST(test_transport_without_a_queue_refuses_and_reports);
     RUN_TEST(test_subscribe_registers_the_set_topic_at_qos_0);
     RUN_TEST(test_subscribe_retries_twice_then_gives_up);
     RUN_TEST(test_subscribe_while_disconnected_does_nothing);

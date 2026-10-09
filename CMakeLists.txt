@@ -1,7 +1,10 @@
 # Builds the core without PlatformIO, for Zephyr, embedded Linux, or a host check.
-# Usage from a parent project: add_subdirectory(path/to/cpp-sdk) and link ebus_core.
+# Usage from a parent project: add_subdirectory(path/to/cpp-sdk) and link ebus_core, the
+# umbrella, or one component target (ebus_mqtt).
 cmake_minimum_required(VERSION 3.18)
 project(ebus_core LANGUAGES CXX)
+
+add_subdirectory(mqtt)
 
 add_library(ebus_core STATIC
     src/homie/controller.cpp
@@ -22,6 +25,7 @@ add_library(ebus_core STATIC
 )
 target_include_directories(ebus_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(ebus_core PUBLIC cxx_std_17)
+target_link_libraries(ebus_core PUBLIC ebus_mqtt)
 
 # ArduinoJson, the core's one dependency (header-only). A parent project that already has
 # an ArduinoJson target keeps it. Otherwise the release PlatformIO uses (library.json,
@@ -56,26 +60,31 @@ endif()
 
 if(_ebus_core_top_level AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(ebus_core PRIVATE -Wall -Wextra)
+    target_compile_options(ebus_mqtt PRIVATE -Wall -Wextra)
 endif()
 
 # Compiles every public header in a translation unit of its own, so a header that needs
-# something it does not include (or includes a platform header) fails here.
+# something it does not include (or includes a platform header) fails here. A component's
+# headers are compiled against that component's target alone.
 option(EBUS_CORE_CHECK_HEADERS "Compile each public header on its own" ${_ebus_core_top_level})
 if(EBUS_CORE_CHECK_HEADERS)
-    file(GLOB_RECURSE _ebus_core_headers RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/include
-         CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
-    set(_ebus_core_header_tus "")
-    foreach(_header IN LISTS _ebus_core_headers)
-        string(MAKE_C_IDENTIFIER ${_header} _tu_name)
-        set(_tu ${CMAKE_CURRENT_BINARY_DIR}/header_check/${_tu_name}.cpp)
-        file(CONFIGURE OUTPUT ${_tu} CONTENT "#include <${_header}>\n")
-        list(APPEND _ebus_core_header_tus ${_tu})
-    endforeach()
-    add_library(ebus_core_header_check OBJECT ${_ebus_core_header_tus})
-    target_link_libraries(ebus_core_header_check PRIVATE ebus_core)
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-        target_compile_options(ebus_core_header_check PRIVATE -Wall -Wextra)
-    endif()
+    function(ebus_header_check target include_dir)
+        file(GLOB_RECURSE _headers RELATIVE ${include_dir} CONFIGURE_DEPENDS ${include_dir}/*.h)
+        set(_tus "")
+        foreach(_header IN LISTS _headers)
+            string(MAKE_C_IDENTIFIER ${_header} _tu_name)
+            set(_tu ${CMAKE_CURRENT_BINARY_DIR}/header_check/${target}/${_tu_name}.cpp)
+            file(CONFIGURE OUTPUT ${_tu} CONTENT "#include <${_header}>\n")
+            list(APPEND _tus ${_tu})
+        endforeach()
+        add_library(${target}_header_check OBJECT ${_tus})
+        target_link_libraries(${target}_header_check PRIVATE ${target})
+        if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+            target_compile_options(${target}_header_check PRIVATE -Wall -Wextra)
+        endif()
+    endfunction()
+    ebus_header_check(ebus_mqtt ${CMAKE_CURRENT_SOURCE_DIR}/mqtt/include)
+    ebus_header_check(ebus_core ${CMAKE_CURRENT_SOURCE_DIR}/include)
 endif()
 
 # The Unity suites in test/, one CTest test each. Off when the core is a subproject.

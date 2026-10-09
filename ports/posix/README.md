@@ -1,15 +1,14 @@
 # POSIX port
 
-The eBus core ([`doc/core.md`](../../doc/core.md)) on Linux and macOS: a `HomieTransport` over the Eclipse Paho MQTT C client, the clock and log bindings, a demo device, a demo controller, and end-to-end tests against a real mosquitto. CMake only; PlatformIO never builds this directory, because the root `library.json` limits a PlatformIO build to `include/` and `src/`.
+The eBus core ([`doc/core.md`](../../doc/core.md)) on Linux and macOS: a `HomieTransport` over the Eclipse Paho MQTT C client, the clock and log bindings, a demo device, a demo controller, and end-to-end tests against a real mosquitto. CMake only; PlatformIO never builds this directory, because the root `library.json` limits a PlatformIO build to `src/` and `mqtt/src/`.
 
 | Path | Contents |
 |---|---|
 | `include/ebus_posix/paho_transport.h`, `src/paho_transport.cpp` | `PahoTransport`: connect, reconnect, Last Will, inbound deferral, `queue_publish()` from any thread |
-| `include/ebus_posix/publish_hold.h`, `src/publish_hold.cpp` | What is held while the broker link is down |
 | `include/ebus_posix/posix_port.h`, `src/posix_port.cpp` | Clock (`CLOCK_MONOTONIC`, `nanosleep`), log (stderr), settable table storage, `ebus_posix_register_settable()` |
 | `apps/device_main.cpp` | `ebus-posix-device` |
 | `apps/controller_main.cpp` | `ebus-posix-controller` |
-| `test/` | `test_publish_hold` (no broker) and `ebus_posix_e2e` (mosquitto) |
+| `test/` | `ebus_posix_e2e` (mosquitto) |
 
 ## Build
 
@@ -21,7 +20,7 @@ ctest --test-dir ports/posix/build --output-on-failure
 
 Paho MQTT C v1.3.16 is fetched and checked against its SHA-256, and built as a static, plain-TCP library. An installed Paho is used instead when CMake finds its `eclipse-paho-mqtt-c` package; `-DEBUS_POSIX_PAHO=fetch` or `=system` forces one or the other. To build offline, pass `-DFETCHCONTENT_SOURCE_DIR_PAHO_MQTT_C=<checkout>` (and `FETCHCONTENT_SOURCE_DIR_ARDUINOJSON` for the core). `-DEBUS_POSIX_WERROR=ON` makes warnings in the port, demos and tests errors, as CI does.
 
-The end-to-end tests need `mosquitto` (Homebrew: `brew install mosquitto`; Debian/Ubuntu: `apt-get install mosquitto`). Each test starts its own on a free 127.0.0.1 port and leaves its logs in `build/e2e/<test>/`. Without mosquitto, CMake warns and registers only `publish_hold`.
+The end-to-end tests need `mosquitto` (Homebrew: `brew install mosquitto`; Debian/Ubuntu: `apt-get install mosquitto`). Each test starts its own on a free 127.0.0.1 port and leaves its logs in `build/e2e/<test>/`. Without mosquitto, CMake warns and registers no test.
 
 ## Run
 
@@ -40,20 +39,14 @@ The device publishes `<domain>/5/<id>` with `switch/on` (boolean, settable) and 
 | Piece | Here |
 |---|---|
 | Inbound messages | Paho's receive thread copies each message into a mutex-guarded arena (`EBUS_POSIX_INBOX_BYTES`, 64 KB) and returns. `PahoTransport::loop()`, on the application's thread, hands each one to `settable_dispatch()` if the settable table claims the topic, else to the fallback (`controller_mqtt_callback()` for a controller). Nothing that publishes or subscribes runs on Paho's thread. |
-| `queue_publish()` | Any thread: copies into a fixed ring (`EBUS_POSIX_PUBLISH_QUEUE`, 64 entries of `Property::VALUE_MAX`), which `loop()` sends. `queued_publish_done()` is called exactly once per call, from `loop()`, or at once when the ring is full or the message too long. |
-| Connect | Clean session, keepalive 60 s, Last Will `<root>/$state` = `lost`, retained, at `homie_qos(true)`. After each connect, in order: flush the hold, subscribe every settable topic, call the application's `on_connected(first)`. The device publishes the tree on the first and `publishStateTree()` on later ones, as the ESP32 firmware does. |
+| `queue_publish()` | `PahoTransport` overrides the generic overload (`ebus_mqtt`'s `MqttTransport`); a Property reaches it through `HomieTransport`'s adapter. Any thread: copies into a fixed ring (`EBUS_POSIX_PUBLISH_QUEUE`, 64 entries of `Property::VALUE_MAX`), which `loop()` sends. The completion callback is called exactly once per call, from `loop()`, or at once when the ring is full or the message too long. |
+| Connect | Clean session, keepalive 60 s, Last Will `<root>/$state` = `lost`, retained, at `homie_qos(true)`. After each connect, `mqtt_after_connect()` runs, in order: flush the hold, subscribe every settable topic, call the application's `on_connected(first)`. The device publishes the tree on the first and `publishStateTree()` on later ones, as the ESP32 firmware does. |
 | Link down | `publish()` holds or drops (below) and returns false; `loop()` reconnects at once, then every `--reconnect-ms`. |
 | Settable table | `EBUS_POSIX_SETTABLE_CAPACITY` (64) static entries. No `NodeEntity` on this port, so no driver call is bound; a settable reaches the application through a `settable_handler_t`, registered with `ebus_posix_register_settable()`, which also works before the first connect. |
 
 ### While the link is down
 
-The rules of [ebus-mqtt-client](https://github.com/electrification-bus/ebus-mqtt-client) ("Publishing before the connection is up"), in `PublishHold`:
-
-- Retained, any QoS: held, newest value per topic; a newer value moves to the back of the flush order.
-- Not retained, QoS 1 or 2: held in order, one entry per publish.
-- Not retained, QoS 0: dropped. Every non-retained Homie publication is QoS 0, so in practice only retained values are held.
-- At most `EBUS_POSIX_HOLD_ENTRIES` (64), evicting the oldest; a payload over `EBUS_POSIX_HOLD_PAYLOAD_MAX` (1024 bytes, so a `$description`) is dropped and logged.
-- Flushed on connect before the subscriptions and before `on_connected`. A flush the link interrupts keeps what it did not send. `disconnect()` discards the hold.
+`publish()` passes each message to `ebus_mqtt`'s `PublishHold`, which applies the rules of [ebus-mqtt-client](https://github.com/electrification-bus/ebus-mqtt-client) ([`doc/mqtt.md`](../../doc/mqtt.md#while-the-link-is-down)), and logs what it evicts or drops as too large. The hold is flushed on connect before the subscriptions and before `on_connected`; a flush the link interrupts keeps what it did not send. `disconnect()` discards the hold.
 
 ## Known gaps
 

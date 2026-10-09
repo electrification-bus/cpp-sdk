@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include <ebus_posix/paho_transport.h>
+#include <ebus/mqtt/reconnect.h>
 #include <homie/homie_clock.h>
 #include <homie/homie_log.h>
 #include <homie/homie_settable.h>
@@ -124,7 +125,20 @@ bool PahoTransport::send_held(void* ctx, const char* topic, const char* payload,
 void PahoTransport::hold_or_drop(const char* topic, const char* payload, int length,
                                  bool retained, int qos) {
     if (_stopped) return;
-    _hold.hold(topic, payload, length, retained, qos);
+    switch (_hold.hold(topic, payload, length, retained, qos)) {
+        case PublishHold::DROPPED_TOO_LARGE:
+            homie_logf("PAHO: %d-byte publish to '%s' is too large to hold; dropped\n", length,
+                       topic);
+            break;
+        case PublishHold::EVICTED_OLDEST:
+            if (_hold.evicted() == 1 || _hold.evicted() % 100 == 0) {
+                homie_logf("PAHO: hold full (%d entries), evicted the oldest; %u evicted so "
+                           "far\n", EBUS_MQTT_HOLD_ENTRIES, (unsigned)_hold.evicted());
+            }
+            break;
+        default:
+            break;
+    }
 }
 
 bool PahoTransport::publish(const char* topic, const char* payload, int length,
@@ -151,8 +165,8 @@ bool PahoTransport::connected() {
     return _client && _link_ready.load() && MQTTClient_isConnected(CLIENT(_client));
 }
 
-// One connect attempt. On success: flush the hold, re-subscribe every settable topic,
-// then tell the application, in that order (ebus-mqtt-client's reconnect order).
+// One connect attempt. On success, mqtt_after_connect() flushes the hold, re-subscribes
+// every settable topic, then tells the application, in that order.
 bool PahoTransport::try_connect() {
     MQTTClient c = CLIENT(_client);
     if (MQTTClient_isConnected(c)) MQTTClient_disconnect(c, 0);   // a half-up session
@@ -186,33 +200,42 @@ bool PahoTransport::try_connect() {
     }
     if (_will_topic[0]) homie_logf("PAHO: will '%s' = '%s'\n", _will_topic, _will_payload);
 
-    int held = _hold.count();
-    int sent = _hold.flush(send_held, this);
-    homie_logf("PAHO: flushed %d of %d held publishes (%u evicted while down)\n", sent, held,
-               (unsigned)_hold.evicted());
-    if (sent < held) {
-        homie_logln("PAHO: link dropped during the flush; the rest stays held");
-        return false;
+    MqttConnectSteps steps = {send_held, resubscribe_all, notify_connected, this};
+    MqttConnectReport report;
+    _held_at_connect = _hold.count();
+    bool first = !_ever_connected;
+    bool ready = mqtt_after_connect(&_hold, steps, first, &report);
+    if (report.flushed < report.held) {
+        homie_logf("PAHO: flushed %d of %d held publishes; the link dropped during the "
+                   "flush, the rest stays held\n", report.flushed, report.held);
     }
+    if (ready) _ever_connected = true;
+    return ready;
+}
 
-    // Subscribes are made with the link marked up, so subscribe() is usable from here on.
-    _link_ready.store(true);
+bool PahoTransport::resubscribe_all(void* ctx) {
+    PahoTransport* self = (PahoTransport*)ctx;
+    homie_logf("PAHO: flushed %d of %d held publishes (%u evicted while down)\n",
+               self->_held_at_connect, self->_held_at_connect, (unsigned)self->_hold.evicted());
+    // From here publish() and subscribe() go to the wire.
+    self->_link_ready.store(true);
     int subscribed = 0;
     for (int i = 0; i < settable_count(); i++) {
-        if (subscribe(settable_topic(i), 0)) {   // /set is QoS 0
+        if (self->subscribe(settable_topic(i), 0)) {   // /set is QoS 0
             subscribed++;
         } else {
-            homie_logf("PAHO: subscribe '%s' failed (%d)\n", settable_topic(i), _last_error);
+            homie_logf("PAHO: subscribe '%s' failed (%d)\n", settable_topic(i),
+                       self->_last_error);
         }
     }
     homie_logf("PAHO: resubscribed %d of %d settable topics\n", subscribed, settable_count());
-    if (!_link_ready.load()) return false;
+    return self->_link_ready.load();
+}
 
-    bool first = !_ever_connected;
-    _ever_connected = true;
+void PahoTransport::notify_connected(void* ctx, bool first) {
+    PahoTransport* self = (PahoTransport*)ctx;
     homie_logf("PAHO: connected (%s)\n", first ? "first" : "reconnect");
-    if (_connected_fn) _connected_fn(_connected_ctx, first);
-    return true;
+    if (self->_connected_fn) self->_connected_fn(self->_connected_ctx, first);
 }
 
 void PahoTransport::drain_inbound() {
@@ -251,14 +274,14 @@ void PahoTransport::drain_queue() {
             _queue_head = (_queue_head + 1) % EBUS_POSIX_PUBLISH_QUEUE;
             _queue_count--;
         }
-        bool sent = publish(item.topic, item.payload, item.length, item.retained,
-                            homie_qos(item.retained));
-        if (item.source) item.source->queued_publish_done(item.payload, item.length, sent);
+        bool sent = publish(item.topic, item.payload, item.length, item.retained, item.qos);
+        if (item.done) item.done(item.ctx, item.payload, item.length, sent);
     }
 }
 
 bool PahoTransport::queue_publish(const char* topic, const char* payload, int length,
-                                  bool retained, Property* source) {
+                                  bool retained, int qos, mqtt_publish_done_fn done,
+                                  void* ctx) {
     if (length < 0) length = 0;
     size_t topic_len = strlen(topic);
     bool ok = false;
@@ -276,7 +299,9 @@ bool PahoTransport::queue_publish(const char* topic, const char* payload, int le
             if (length > 0) memcpy(q.payload, payload, (size_t)length);
             q.length = length;
             q.retained = retained;
-            q.source = source;
+            q.qos = qos;
+            q.done = done;
+            q.ctx = ctx;
             _queue_count++;
             ok = true;
         }
@@ -287,7 +312,7 @@ bool PahoTransport::queue_publish(const char* topic, const char* payload, int le
             homie_logf("PAHO: publish queue full, '%s' dropped (%u dropped)\n", topic,
                        (unsigned)n);
         }
-        if (source) source->queued_publish_done(payload, length, false);
+        if (done) done(ctx, payload, length, false);
     }
     return ok;
 }

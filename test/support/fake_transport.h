@@ -3,8 +3,9 @@
 // order, so a test can assert exactly what would have gone on the wire.
 //
 // queue_publish() only records. The real queue reports back later, when its owner task
-// sends or drops the message; a test plays that part by calling
-// Property::queued_publish_done() itself (see FakeTransport::Record::source).
+// sends or drops the message; a test plays that part by calling the recorded callback,
+// Record::done(Record::ctx, ...). A Property's queued publish reaches it through
+// HomieTransport's adapter, so ctx is the Property.
 #include <homie/homie_transport.h>
 #include <stdio.h>
 #include <string.h>
@@ -24,7 +25,8 @@ class FakeTransport final : public HomieTransport {
         int length;          // bytes the caller asked to publish (0 for a subscribe)
         bool retained;
         int qos;
-        Property* source;    // queue_publish() only
+        mqtt_publish_done_fn done;   // queue_publish() only
+        void* ctx;
     };
 
     bool is_connected = true;
@@ -33,18 +35,20 @@ class FakeTransport final : public HomieTransport {
     bool subscribe_result = true;
 
     using HomieTransport::publish;
+    using HomieTransport::queue_publish;
     bool publish(const char* topic, const char* payload, int length, bool retained,
                  int qos) override {
-        record(PUBLISH, topic, payload, length, retained, qos, nullptr);
+        record(PUBLISH, topic, payload, length, retained, qos, nullptr, nullptr);
         return is_connected && publish_result;
     }
     bool queue_publish(const char* topic, const char* payload, int length, bool retained,
-                       Property* source) override {
-        record(QUEUED, topic, payload, length, retained, homie_qos(retained), source);
+                       int qos, mqtt_publish_done_fn done, void* ctx) override {
+        record(QUEUED, topic, payload, length, retained, qos, done, ctx);
+        if (!queue_result && done) done(ctx, payload, length, false);
         return queue_result;
     }
     bool subscribe(const char* topic, int qos) override {
-        record(SUBSCRIBE, topic, "", 0, false, qos, nullptr);
+        record(SUBSCRIBE, topic, "", 0, false, qos, nullptr, nullptr);
         return is_connected && subscribe_result;
     }
     bool connected() override { return is_connected; }
@@ -68,7 +72,7 @@ class FakeTransport final : public HomieTransport {
 
  private:
     void record(Kind kind, const char* topic, const char* payload, int length, bool retained,
-                int qos, Property* source) {
+                int qos, mqtt_publish_done_fn done, void* ctx) {
         if (_count < MAX_RECORDS) {
             Record& r = _records[_count];
             r.kind = kind;
@@ -80,7 +84,8 @@ class FakeTransport final : public HomieTransport {
             r.length = length;
             r.retained = retained;
             r.qos = qos;
-            r.source = source;
+            r.done = done;
+            r.ctx = ctx;
         }
         _count++;
     }
