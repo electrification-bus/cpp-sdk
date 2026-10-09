@@ -16,7 +16,7 @@ A portable C++17 core for devices and controllers on the [Electrification Bus](h
 
 ## Status
 
-Version 0.1.0, alpha. Known limits:
+Version 0.2.0, alpha. Known limits:
 
 - The POSIX demo build has no TLS; it connects to plain-TCP brokers only.
 - After a broker loses its retained messages, a reconnect re-asserts `$state` but not `$description` (see the POSIX port's [Known gaps](ports/posix/README.md#known-gaps); esp32-sdk has the same gap).
