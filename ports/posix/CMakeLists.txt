@@ -65,7 +65,6 @@ endfunction()
 add_library(ebus_posix STATIC
     src/paho_transport.cpp
     src/posix_port.cpp
-    src/publish_hold.cpp
 )
 target_include_directories(ebus_posix PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(ebus_posix PUBLIC ebus_core Threads::Threads PRIVATE ${_paho_target})
@@ -81,11 +80,6 @@ ebus_posix_warnings(ebus-posix-controller)
 
 if(EBUS_POSIX_TESTS)
     enable_testing()
-
-    add_executable(test_publish_hold test/test_publish_hold.cpp)
-    target_link_libraries(test_publish_hold PRIVATE ebus_posix)
-    ebus_posix_warnings(test_publish_hold)
-    add_test(NAME publish_hold COMMAND test_publish_hold)
 
     # The end-to-end tests start their own mosquitto on a free localhost port.
     find_program(EBUS_POSIX_MOSQUITTO mosquitto

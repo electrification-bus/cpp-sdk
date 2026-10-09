@@ -124,7 +124,20 @@ bool PahoTransport::send_held(void* ctx, const char* topic, const char* payload,
 void PahoTransport::hold_or_drop(const char* topic, const char* payload, int length,
                                  bool retained, int qos) {
     if (_stopped) return;
-    _hold.hold(topic, payload, length, retained, qos);
+    switch (_hold.hold(topic, payload, length, retained, qos)) {
+        case PublishHold::DROPPED_TOO_LARGE:
+            homie_logf("PAHO: %d-byte publish to '%s' is too large to hold; dropped\n", length,
+                       topic);
+            break;
+        case PublishHold::EVICTED_OLDEST:
+            if (_hold.evicted() == 1 || _hold.evicted() % 100 == 0) {
+                homie_logf("PAHO: hold full (%d entries), evicted the oldest; %u evicted so "
+                           "far\n", EBUS_MQTT_HOLD_ENTRIES, (unsigned)_hold.evicted());
+            }
+            break;
+        default:
+            break;
+    }
 }
 
 bool PahoTransport::publish(const char* topic, const char* payload, int length,

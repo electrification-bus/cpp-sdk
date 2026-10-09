@@ -19,6 +19,13 @@
   ],
   "build": {
     "includeDir": "include",
-    "srcDir": "src"
+    "srcDir": ".",
+    "srcFilter": [
+      "+<src/>",
+      "+<mqtt/src/>"
+    ],
+    "flags": [
+      "-I mqtt/include"
+    ]
   }
 }

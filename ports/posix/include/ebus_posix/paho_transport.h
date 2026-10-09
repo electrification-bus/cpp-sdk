@@ -12,13 +12,16 @@
 // inbound arena, the queue_publish() ring and the disconnected-link hold. Declare the
 // transport static, not on a stack. Paho allocates per in-flight message internally,
 // bounded by its in-flight window.
-#include <ebus_posix/publish_hold.h>
+#include <ebus/mqtt/publish_hold.h>
 #include <homie/controller_inbox.h>
 #include <homie/homie_transport.h>
 #include <homie/Property.h>
 #include <atomic>
 #include <mutex>
 #include <stdint.h>
+
+static_assert(EBUS_MQTT_HOLD_TOPIC_MAX >= HOMIE_TOPIC_MAX,
+              "the publish hold must take every Homie topic");
 
 #ifndef EBUS_POSIX_INBOX_BYTES
 #define EBUS_POSIX_INBOX_BYTES (64 * 1024)
