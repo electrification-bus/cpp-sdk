@@ -3,19 +3,24 @@
 
 struct BrokerServiceInfo {
   const char* name;
+  const char* type;
   uint16_t default_port;
   bool supported;
 };
 
 static const BrokerServiceInfo BROKER_SERVICES[BROKER_SVC_COUNT] = {
-  {"secure-mqtt", 8883, true},
-  {"mqtt",        1883, true},
-  {"mqtt-ws",     9001, false},
-  {"mqtt-wss",    9002, false},
+  {"secure-mqtt", "_secure-mqtt._tcp", 8883, true},
+  {"mqtt",        "_mqtt._tcp",        1883, true},
+  {"mqtt-ws",     "_mqtt-ws._tcp",     9001, false},
+  {"mqtt-wss",    "_mqtt-wss._tcp",    9002, false},
 };
 
 const char* broker_service_name(uint8_t svc) {
   return svc < BROKER_SVC_COUNT ? BROKER_SERVICES[svc].name : "";
+}
+
+const char* broker_service_type(uint8_t svc) {
+  return svc < BROKER_SVC_COUNT ? BROKER_SERVICES[svc].type : "";
 }
 
 uint16_t broker_service_default_port(uint8_t svc) {

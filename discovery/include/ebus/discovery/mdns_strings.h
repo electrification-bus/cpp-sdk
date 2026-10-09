@@ -2,6 +2,12 @@
 
 // mDNS service types and protocols
 #define MDNS_PROTO_TCP          "_tcp"
+// Full DNS-SD service types, as MdnsBackend (ebus/discovery/mdns_backend.h) takes them
+#define MDNS_TYPE_EBUS          "_ebus._tcp"
+#define MDNS_TYPE_DEVICE_INFO   "_device-info._tcp"
+#define MDNS_TYPE_HTTP          "_http._tcp"
+#define MDNS_TYPE_HTTPS         "_https._tcp"
+#define MDNS_TYPE_LOG           "_telnet._tcp"
 
 // TXT keys and values follow "Detail: mDNS Discovery" in the eBus specification
 // (electrification-bus/specification, framework.md).

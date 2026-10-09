@@ -19,6 +19,8 @@ enum BrokerService {
 
 // Service name ("secure-mqtt"), or "" for an out-of-range value.
 const char* broker_service_name(uint8_t svc);
+// DNS-SD service type ("_secure-mqtt._tcp"), or "" for an out-of-range value.
+const char* broker_service_type(uint8_t svc);
 // Port used when the SRV record carries none.
 uint16_t broker_service_default_port(uint8_t svc);
 // True when the MQTT client can connect over this transport. It is a TCP/TLS client, so
