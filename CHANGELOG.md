@@ -4,6 +4,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-09
+
 ### Added
 
 - `ebus_homie`, a CMake target (`homie/`, [doc/core.md](doc/core.md)): the Homie model, `/set` dispatch, the controller, id and payload validation, the JSON helpers, `HomieTransport`, and the log and clock hooks. It depends on `ebus_mqtt` and ArduinoJson, not on `ebus_discovery`. A CI step compiles it with only its own, `ebus_mqtt`'s and ArduinoJson's include directories. ([#3](https://github.com/electrification-bus/cpp-sdk/issues/3))
@@ -52,7 +54,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 - The core's Unity suites, built and run with CMake and CTest.
 - `library.json`, so a PlatformIO project can add the core with a `lib_deps` git URL.
 
-[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/electrification-bus/cpp-sdk/releases/tag/v0.1.0
