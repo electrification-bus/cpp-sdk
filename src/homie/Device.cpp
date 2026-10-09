@@ -300,7 +300,7 @@ void Device::clearRetained() {
   }
   // A9: the retained $description is now empty, so forget the cached hash — the next
   // publish() must re-send even if the content matches what we had before clearing.
-  _has_description_hash = false;
+  forgetDescriptionHash();
 }
 
 void Device::setState(DeviceState state) {

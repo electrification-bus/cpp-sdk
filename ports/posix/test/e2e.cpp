@@ -337,8 +337,9 @@ static void case_will() {
     printf("will: root $state lost after SIGKILL\n");
 }
 
-// Broker restart (retained store lost): the device reconnects, flushes what it held,
-// re-subscribes /set, then re-asserts $state.
+// Broker restart without persistence (retained store lost): the device reconnects,
+// flushes what it held, re-subscribes /set, then republishes the tree, so the broker
+// holds each device's $description again.
 static void case_reconnect() {
     Broker b;
     b.start();
@@ -356,6 +357,19 @@ static void case_reconnect() {
             "root $state ready was not republished after the restart");
     REQUIRE(rec.wait_for(CHILD_T + "$state", "ready") >= 0,
             "child $state ready was not republished after the restart");
+
+    // A client that subscribes now gets both descriptions from the broker's retained store.
+    {
+        Recorder late(b.port);
+        for (const std::string* base : {&ROOT_T, &CHILD_T}) {
+            int i = late.wait_for(*base + "$description", nullptr, 0, 3000);
+            REQUIRE(i >= 0, "no retained %s$description after the restart", base->c_str());
+            Msg m = late.snapshot()[(size_t)i];
+            REQUIRE(m.retained && m.payload.find("\"homie\":\"5.0\"") != std::string::npos,
+                    "%s$description after the restart: retained=%d %s", base->c_str(),
+                    (int)m.retained, m.payload.c_str());
+        }
+    }
 
     bool applied = false;
     for (int attempt = 0; attempt < 20 && !applied; attempt++) {
@@ -379,8 +393,8 @@ static void case_reconnect() {
     int sent = -1, held = -1;
     sscanf(log.c_str() + flushed, "PAHO: flushed %d of %d", &sent, &held);
     REQUIRE(held >= 1 && held <= 2 && sent == held, "flushed %d of %d held", sent, held);
-    printf("reconnect: flushed %d held (newest per topic), resubscribed /set, re-asserted "
-           "$state\n", held);
+    printf("reconnect: flushed %d held (newest per topic), resubscribed /set, republished "
+           "both $description to a broker that had lost them\n", held);
 }
 
 // The controller discovers the device tree and sees a property change it caused.

@@ -60,6 +60,11 @@ class Device {
     void publishState();
     void publishTree();        // boot: each device init -> $description + nodes -> ready, children first
     void publishStateTree();   // publish just $state for this device + all descendants (e.g. on reconnect)
+    // publish() skips a $description identical to the last one this device sent. After a
+    // reconnect where the broker may have lost its retained copy (a broker restarted
+    // without persistence, or held publishes evicted), call this on each device before
+    // republishing so the next publish() sends $description again. This device only.
+    void forgetDescriptionHash() { _has_description_hash = false; }
     const char* topic();
     size_t serialize(char* buffer, size_t bufferSize);
     
@@ -153,7 +158,8 @@ class Device {
     // republish whose content is byte-identical is suppressed (no redundant ~KB
     // retained message, no gratuitous INIT->READY flap forcing controllers to
     // resync). _has_description_hash distinguishes "never published" from a real
-    // hash that happens to be 0; cleared by clearRetained() so the next publish sends.
+    // hash that happens to be 0; cleared by clearRetained() and forgetDescriptionHash()
+    // so the next publish sends.
     uint32_t _last_description_hash = 0;
     bool     _has_description_hash  = false;
 };

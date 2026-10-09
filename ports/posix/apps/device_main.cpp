@@ -8,8 +8,8 @@
 //     status/uptime      integer seconds, published from a worker thread
 //
 // The tree is built before the first connect. Each connect flushes what was held while
-// the link was down and re-subscribes the /set topics (PahoTransport); the first then
-// publishes the whole tree, a later one re-asserts $state over the broker's "lost".
+// the link was down and re-subscribes the /set topics (PahoTransport), then publishes the
+// whole tree; a reconnect sends every $description again (see on_connected()).
 #include <ebus_posix/paho_transport.h>
 #include <ebus_posix/posix_port.h>
 #include <homie/Device.h>
@@ -21,6 +21,7 @@
 #include <homie/Property.h>
 #include <atomic>
 #include <math.h>
+#include <mutex>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
@@ -37,6 +38,9 @@ static Property uptime;
 
 static std::atomic<bool> running{true};
 static std::thread uptime_thread;
+// Held by the uptime worker while it stores and queues `uptime`, and by a reconnect's
+// whole-tree republish, which reads every property on the main thread.
+static std::mutex uptime_lock;
 
 static void on_signal(int) { running.store(false); }
 
@@ -55,18 +59,31 @@ static void uptime_worker() {
     uint32_t start = homie_now_ms();
     while (running.load()) {
         homie_sleep_ms(1000);
+        std::lock_guard<std::mutex> lock(uptime_lock);
         uptime.setValue((int64_t)((homie_now_ms() - start) / 1000));
         uptime.publish_queued();
     }
 }
 
+static void forget_description_hashes(Device* d) {
+    d->forgetDescriptionHash();
+    for (Device* c = d->firstChild(); c; c = c->nextSibling()) forget_description_hashes(c);
+}
+
+// A reconnect republishes the whole tree, $description included. With a clean session the
+// port cannot tell whether the broker kept its retained store (a broker restarted without
+// persistence has lost every $description and value), nor whether the hold evicted
+// anything that mattered, so it assumes the worst every time: one init -> ready cycle and
+// one $description per device, rather than a device a controller cannot describe.
 static void on_connected(void* ctx, bool first) {
     (void)ctx;
     if (first) {
         root.publishTree();   // child init -> $description -> ready, then the root
         uptime_thread = std::thread(uptime_worker);
     } else {
-        root.publishStateTree();
+        std::lock_guard<std::mutex> lock(uptime_lock);
+        forget_description_hashes(&root);
+        root.publishTree();
     }
 }
 
