@@ -4,6 +4,15 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+### Added
+
+- `ebus_discovery`, a CMake target with no dependency (`discovery/`, [doc/discovery.md](doc/discovery.md)): `txt_build_ebus()`, `txt_build_device_info()`, `txt_build_http()` and `txt_build_log()`, which build each advertised service's TXT record from one `EbusIdentity` into a fixed-size `TxtRecord`, with the keys and order of framework.md, ebus-service-discovery and esp32-sdk; `MdnsBackend`, the advertise, browse and resolve interface a port implements over its mDNS stack; `broker_browse()` and `broker_reresolve()`, esp32-sdk's broker selection over that interface; `broker_service_type()`. `ebus_core` links it. PlatformIO still builds one library.
+- Unity suites `test_discovery_txt` and `test_discovery_backend`, which link `ebus_discovery` alone, and a CI step that compiles `ebus_discovery` with only its own include directory.
+
+### Changed
+
+- `broker_discovery.h` and `mdns_strings.h` move to `ebus_discovery` as `<ebus/discovery/broker_discovery.h>` and `<ebus/discovery/mdns_strings.h>`; `<platform/broker_discovery.h>` and `<platform/mdns_strings.h>` forward to them. Their suite is now `test_discovery_broker`. `mdns_strings.h` adds the full service types (`MDNS_TYPE_*`), `broker_ca`, `hw_version`, `broker-host` and each auth method value.
+
 ## [0.2.0] - 2026-10-09
 
 ### Added

@@ -3,7 +3,7 @@
 [![CI](https://github.com/electrification-bus/cpp-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/electrification-bus/cpp-sdk/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A portable C++17 core for devices and controllers on the [Electrification Bus](https://github.com/electrification-bus/specification) (eBus), which builds on the [Homie 5 MQTT convention](https://homieiot.github.io/). The core holds the Homie device model (Device, Node, Property, the `$state` and `$description` lifecycle), `/set` dispatch, the controller, id and payload validation, and broker-discovery parsing. It depends on the C and C++ standard libraries and [ArduinoJson](https://arduinojson.org/), with no Arduino, ESP-IDF or FreeRTOS header, and a port supplies the MQTT client, the console and the clock.
+A portable C++17 core for devices and controllers on the [Electrification Bus](https://github.com/electrification-bus/specification) (eBus), which builds on the [Homie 5 MQTT convention](https://homieiot.github.io/). The core holds the Homie device model (Device, Node, Property, the `$state` and `$description` lifecycle), `/set` dispatch, the controller, id and payload validation, and the mDNS discovery contract (TXT records, broker discovery). It depends on the C and C++ standard libraries and [ArduinoJson](https://arduinojson.org/), with no Arduino, ESP-IDF or FreeRTOS header, and a port supplies the MQTT client, the console and the clock.
 
 [`.ebus-spec.json`](.ebus-spec.json) records the specification commit, `framework.md` version, and framework features this SDK implements.
 
@@ -57,9 +57,10 @@ As the top-level project this builds the libraries below, compiles each public h
 | Target | Contents | Depends on | Docs |
 |---|---|---|---|
 | `ebus_mqtt` | The MQTT transport interface (`MqttTransport`), the publishes held while the link is down (`PublishHold`), the reconnect order (`mqtt_after_connect()`) | nothing | [`doc/mqtt.md`](doc/mqtt.md) |
-| `ebus_core` | Everything: the Homie model, `/set` dispatch, the controller, validation, broker discovery, and `ebus_mqtt` | `ebus_mqtt`, ArduinoJson | [`doc/core.md`](doc/core.md) |
+| `ebus_discovery` | The mDNS contract: each advertised service's TXT record (`txt_build_ebus()` and the rest), the interface a port's mDNS stack implements (`MdnsBackend`), broker service types and broker discovery over that interface | nothing | [`doc/discovery.md`](doc/discovery.md) |
+| `ebus_core` | Everything: the Homie model, `/set` dispatch, the controller, validation, `ebus_mqtt` and `ebus_discovery` | `ebus_mqtt`, `ebus_discovery`, ArduinoJson | [`doc/core.md`](doc/core.md) |
 
-`ebus_mqtt` builds with only its own include directory (`mqtt/include`), so a project can take it alone with `add_subdirectory(<path>/cpp-sdk/mqtt)`.
+`ebus_mqtt` and `ebus_discovery` each build with only their own include directory (`mqtt/include`, `discovery/include`), so a project can take either alone with `add_subdirectory(<path>/cpp-sdk/mqtt)` or `add_subdirectory(<path>/cpp-sdk/discovery)`.
 
 ## Writing a port
 
@@ -76,7 +77,7 @@ The POSIX port is the reference: [`ports/posix/src/posix_port.cpp`](ports/posix/
 
 ## Using the core from PlatformIO
 
-[`library.json`](library.json) makes this repository one PlatformIO library named `ebus_core` that compiles `src/` and `mqtt/src/`, puts `include/` and `mqtt/include/` on the include path, and depends on ArduinoJson 7.4.3. Add it with a git URL:
+[`library.json`](library.json) makes this repository one PlatformIO library named `ebus_core` that compiles `src/`, `mqtt/src/` and `discovery/src/`, puts `include/`, `mqtt/include/` and `discovery/include/` on the include path, and depends on ArduinoJson 7.4.3. Add it with a git URL:
 
 ```ini
 lib_deps =
