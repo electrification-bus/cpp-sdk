@@ -22,10 +22,12 @@
     "srcDir": ".",
     "srcFilter": [
       "+<src/>",
-      "+<mqtt/src/>"
+      "+<mqtt/src/>",
+      "+<discovery/src/>"
     ],
     "flags": [
-      "-I mqtt/include"
+      "-I mqtt/include",
+      "-I discovery/include"
     ]
   }
 }

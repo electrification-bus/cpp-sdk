@@ -1,6 +1,7 @@
 # The core's Unity suites, built and run without PlatformIO. Each test_<name>/ directory is
 # one executable and one CTest test; the suites include only core headers and support/.
-# A test_mqtt_<name>/ suite links ebus_mqtt alone, so it cannot reach a Homie header.
+# A test_mqtt_<name>/ suite links ebus_mqtt alone and a test_discovery_<name>/ suite
+# ebus_discovery alone, so neither can reach a Homie header.
 
 # Unity 2.6.1, the release PlatformIO's `test_framework = unity` resolves to, so a suite
 # behaves the same under `pio test` in esp32-sdk and under CTest here. To build offline,
@@ -27,6 +28,8 @@ foreach(_suite IN LISTS _ebus_core_suites)
     add_executable(${_suite} ${_sources})
     if(_suite MATCHES "^test_mqtt_")
         target_link_libraries(${_suite} PRIVATE ebus_mqtt unity)
+    elseif(_suite MATCHES "^test_discovery_")
+        target_link_libraries(${_suite} PRIVATE ebus_discovery unity)
     else()
         target_link_libraries(${_suite} PRIVATE ebus_core unity)
     endif()

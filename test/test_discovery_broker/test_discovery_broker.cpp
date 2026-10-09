@@ -1,8 +1,9 @@
-// Host-side tests for src/platform/broker_discovery.cpp. The service names
-// come from the eBus specification, framework.md "Broker Discovery".
+// Host-side tests for discovery/src/broker_discovery.cpp. The service names
+// come from the eBus specification, framework.md "Broker Discovery". Builds against
+// ebus_discovery alone.
 
 #include <unity.h>
-#include <platform/broker_discovery.h>
+#include <ebus/discovery/broker_discovery.h>
 #include <string.h>
 
 void setUp(void) {}

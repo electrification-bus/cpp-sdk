@@ -1,4 +1,4 @@
-#include <platform/broker_discovery.h>
+#include <ebus/discovery/broker_discovery.h>
 #include <string.h>
 
 struct BrokerServiceInfo {
