@@ -9,6 +9,7 @@ project(ebus_discovery LANGUAGES CXX)
 
 add_library(ebus_discovery STATIC
     src/broker_discovery.cpp
+    src/txt_records.cpp
 )
 target_include_directories(ebus_discovery PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(ebus_discovery PUBLIC cxx_std_17)

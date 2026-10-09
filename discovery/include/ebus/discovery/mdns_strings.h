@@ -26,11 +26,16 @@
 #define MDNS_TXT_AUTH_METHODS   "auth_methods"
 #define MDNS_VAL_ROLE_DEVICE    "device"
 #define MDNS_VAL_ROLE_CONTROLLER "controller"
+#define MDNS_VAL_ROLE_BROKER_HOST "broker-host"
 #define MDNS_TXT_REGISTER       "register"
 #define MDNS_VAL_REGISTER       "/api/v1/auth/register"
 // passphrase: POST MDNS_VAL_REGISTER exchanges the device passphrase for a token.
 // preconfigured: the passphrase itself is set out of band (config file, setup page).
 #define MDNS_VAL_AUTH_METHODS   "passphrase,preconfigured"
+#define MDNS_VAL_AUTH_PASSPHRASE "passphrase"
+#define MDNS_VAL_AUTH_PRECONFIGURED "preconfigured"
+#define MDNS_VAL_AUTH_MTLS      "mtls"
+#define MDNS_TXT_BROKER_CA      "broker_ca"
 // Not in framework.md 0.9: the keys shipping eBus devices (SPAN panels) advertise
 #define MDNS_TXT_HOMIE_DOMAIN   "homie_domain"
 #define MDNS_TXT_HOMIE_VERSION  "homie_version"
@@ -46,6 +51,7 @@
 // _device-info._tcp - Hardware/firmware information
 #define MDNS_SVC_DEVICE_INFO    "_device-info"
 #define MDNS_TXT_SERIAL_NUMBER  "serial_number"
+#define MDNS_TXT_HW_VERSION     "hw_version"
 #define MDNS_TXT_OS_VERSION     "os_version"
 #define MDNS_TXT_MAC            "mac"
 
