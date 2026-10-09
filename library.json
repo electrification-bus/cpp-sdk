@@ -21,13 +21,14 @@
     "includeDir": "include",
     "srcDir": ".",
     "srcFilter": [
-      "+<src/>",
       "+<mqtt/src/>",
-      "+<discovery/src/>"
+      "+<discovery/src/>",
+      "+<homie/src/>"
     ],
     "flags": [
       "-I mqtt/include",
-      "-I discovery/include"
+      "-I discovery/include",
+      "-I homie/include"
     ]
   }
 }

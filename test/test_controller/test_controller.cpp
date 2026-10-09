@@ -3,7 +3,7 @@
 // /set it publishes.
 
 #include <unity.h>
-#include <homie/controller.h>
+#include <ebus/homie/controller.h>
 #include "../support/fake_clock.h"
 #include "../support/fake_transport.h"
 #include "../support/log_capture.h"

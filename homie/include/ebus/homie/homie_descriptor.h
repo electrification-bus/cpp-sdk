@@ -1,5 +1,5 @@
 #pragma once
-#include <homie/homie_enums.h>   // PropertyDatatype
+#include <ebus/homie/homie_enums.h>   // PropertyDatatype
 
 // Declarative property descriptor (D2) — a heap-free, designated-initializer analog of
 // the python-sdk's Property(from_dict=...). Declare a node's properties as a static

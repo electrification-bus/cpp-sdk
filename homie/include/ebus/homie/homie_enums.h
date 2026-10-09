@@ -1,5 +1,5 @@
 #pragma once
-#include <homie/homie.h>   // HOMIE_DATATYPE_* string macros (single source of truth)
+#include <ebus/homie/homie.h>   // HOMIE_DATATYPE_* string macros (single source of truth)
 
 // Type-safe authoring enums (D1). Stringly-typed datatype/unit arguments are easy to
 // mistype ("flaot", "%C") and the compiler can't catch it; these scoped enums make the

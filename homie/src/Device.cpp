@@ -1,8 +1,8 @@
-#include <homie/homie.h>
-#include <homie/Device.h>
-#include <homie/homie_json.h>   // property_from_dict / node_serialize_into
-#include <homie/homie_log.h>
-#include <util/jsonUtils.h>
+#include <ebus/homie/homie.h>
+#include <ebus/homie/Device.h>
+#include <ebus/homie/homie_json.h>   // property_from_dict / node_serialize_into
+#include <ebus/homie/homie_log.h>
+#include <ebus/homie/jsonUtils.h>
 #include <stdio.h>
 #include <string.h>
 /*

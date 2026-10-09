@@ -1,9 +1,9 @@
 #pragma once
 #include <ArduinoJson.h>
-#include <homie/homie_transport.h>
-#include <homie/Node.h>
-#include <homie/Property.h>
-#include <homie/homie_descriptor.h>   // PropertyDesc (D2)
+#include <ebus/homie/homie_transport.h>
+#include <ebus/homie/Node.h>
+#include <ebus/homie/Property.h>
+#include <ebus/homie/homie_descriptor.h>   // PropertyDesc (D2)
 
 typedef enum {
     DEVICE_STATE_INIT,

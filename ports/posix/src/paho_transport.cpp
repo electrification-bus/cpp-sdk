@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 #include <ebus_posix/paho_transport.h>
 #include <ebus/mqtt/reconnect.h>
-#include <homie/homie_clock.h>
-#include <homie/homie_log.h>
-#include <homie/homie_settable.h>
+#include <ebus/homie/homie_clock.h>
+#include <ebus/homie/homie_log.h>
+#include <ebus/homie/homie_settable.h>
 #include <MQTTClient.h>
 #include <stdio.h>
 #include <string.h>

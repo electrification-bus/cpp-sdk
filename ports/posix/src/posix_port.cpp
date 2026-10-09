@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 #include <ebus_posix/posix_port.h>
-#include <homie/homie.h>
-#include <homie/homie_clock.h>
-#include <homie/homie_log.h>
-#include <homie/Property.h>
+#include <ebus/homie/homie.h>
+#include <ebus/homie/homie_clock.h>
+#include <ebus/homie/homie_log.h>
+#include <ebus/homie/Property.h>
 #include <errno.h>
 #include <stdio.h>
 #include <time.h>

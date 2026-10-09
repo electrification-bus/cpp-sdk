@@ -6,7 +6,7 @@
 // sends or drops the message; a test plays that part by calling the recorded callback,
 // Record::done(Record::ctx, ...). A Property's queued publish reaches it through
 // HomieTransport's adapter, so ctx is the Property.
-#include <homie/homie_transport.h>
+#include <ebus/homie/homie_transport.h>
 #include <stdio.h>
 #include <string.h>
 

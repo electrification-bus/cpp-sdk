@@ -1,7 +1,7 @@
 #pragma once
-#include <homie/homie_transport.h>
-#include <homie/homie.h>   // HOMIE_TYPE_MAXLEN, homie_limits.h
-#include <homie/homie_enums.h>   // PropertyDatatype / Unit (D1)
+#include <ebus/homie/homie_transport.h>
+#include <ebus/homie/homie.h>   // HOMIE_TYPE_MAXLEN, homie_limits.h
+#include <ebus/homie/homie_enums.h>   // PropertyDatatype / Unit (D1)
 class Property; // Forward declaration
 class Device;
 
@@ -36,7 +36,7 @@ public:
     const char* topic();
     void publish();
     void clearRetained();   // publish empty (zero-length, retained) to each property topic
-    // JSON serialization lives in homie/homie_json.h as a free function, so
+    // JSON serialization lives in ebus/homie/homie_json.h as a free function, so
     // ArduinoJson stays out of this header — see node_serialize_into(), which
     // iterates via numProperties()/propertyAt(). The old JsonDocument serialize()
     // was never called and is gone.

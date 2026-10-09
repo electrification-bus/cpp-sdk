@@ -10,9 +10,9 @@
 // --set DEVICE/NODE/PROPERTY=VALUE sends one /set once that property is discovered.
 #include <ebus_posix/paho_transport.h>
 #include <ebus_posix/posix_port.h>
-#include <homie/controller.h>
-#include <homie/Device.h>
-#include <homie/homie_clock.h>
+#include <ebus/homie/controller.h>
+#include <ebus/homie/Device.h>
+#include <ebus/homie/homie_clock.h>
 #include <atomic>
 #include <map>
 #include <signal.h>

@@ -1,9 +1,9 @@
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
-#include <homie/homie_limits.h>
+#include <ebus/homie/homie_limits.h>
 
-// Arduino-free pieces of the Homie controller (src/homie/controller.cpp), shared with the
+// Arduino-free pieces of the Homie controller (homie/src/controller.cpp), shared with the
 // host tests in test/test_controller_inbox: the inbox that carries messages out of
 // the MQTT receive callback, and the topic parser.
 

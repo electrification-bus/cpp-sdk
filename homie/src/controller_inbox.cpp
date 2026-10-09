@@ -1,4 +1,4 @@
-#include <homie/controller_inbox.h>
+#include <ebus/homie/controller_inbox.h>
 #include <string.h>
 
 // Record layout: uint16 topic length, uint16 payload length, topic, NUL, payload, NUL.

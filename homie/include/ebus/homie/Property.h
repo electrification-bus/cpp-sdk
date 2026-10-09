@@ -1,8 +1,8 @@
 #pragma once
 
 #include <stdint.h>
-#include <homie/homie_transport.h>
-#include <homie/homie_limits.h>
+#include <ebus/homie/homie_transport.h>
+#include <ebus/homie/homie_limits.h>
 class Node;
 
 class Property {
@@ -114,7 +114,7 @@ public:
     const char* topic();
     void publish();
     Node* getParentNode() const { return _parent_node; }
-    // JSON (de)serialisation lives in homie/homie_json.h as free functions, so
+    // JSON (de)serialisation lives in ebus/homie/homie_json.h as free functions, so
     // ArduinoJson stays out of this header — see property_serialize_into().
     bool is_dirty() const { return _dirty_settable; }
     void clear_dirty() { _dirty_settable = false; }

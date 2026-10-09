@@ -8,7 +8,7 @@
 // records every publish. Each node the tests add carries one property, `value` = "v".
 
 #include <unity.h>
-#include <homie/Device.h>
+#include <ebus/homie/Device.h>
 #include "../support/fake_transport.h"
 #include "../support/log_capture.h"
 

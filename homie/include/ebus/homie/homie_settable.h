@@ -2,7 +2,7 @@
 // The settable table: every /set topic the device answers, with what handles it (the
 // Homie Property that validates and stores the value, the driver behind it, or a plain
 // handler), and the dispatch an inbound or local /set runs through.
-#include <homie/homie_limits.h>
+#include <ebus/homie/homie_limits.h>
 
 // Property and NodeEntity appear here ONLY as pointers and in pointer-to-member typedefs,
 // both of which an incomplete type satisfies.

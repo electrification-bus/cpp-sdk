@@ -13,7 +13,7 @@
 #endif
 
 #define HOMIE_TOPIC_PREFIX      HOMIE_TOPIC_DOMAIN "/" HOMIE_VERSION_NUM
-#include <homie/homie_limits.h>
+#include <ebus/homie/homie_limits.h>
 static_assert(sizeof(HOMIE_TOPIC_PREFIX) - 1 <= HOMIE_TOPIC_PREFIX_MAX,
               "HOMIE_TOPIC_PREFIX is longer than HOMIE_TOPIC_PREFIX_MAX (homie_limits.h)");
 #define HOMIE_TOPIC_SET         "set"
@@ -28,7 +28,7 @@ static_assert(sizeof(HOMIE_TOPIC_PREFIX) - 1 <= HOMIE_TOPIC_PREFIX_MAX,
 // `energy.ebus.device.distribution-enclosure` (41) and the longest capability/node
 // type is `energy.ebus.capability.shed-forecast` (36); 64 holds those with headroom
 // for vocabulary growth. Optional convenience constants for the registered values live
-// in homie/ebus_vocabulary.h — type stays free-form on the wire. (the old Node[16]/
+// in ebus/homie/ebus_vocabulary.h — type stays free-form on the wire. (the old Node[16]/
 // Device[32] buffers truncated these; F2's snprintf made truncation safe but the
 // values were still wrong.)
 #define HOMIE_TYPE_MAXLEN       64

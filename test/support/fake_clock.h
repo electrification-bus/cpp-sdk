@@ -1,7 +1,7 @@
 #pragma once
 // Binds the core's clock hooks to a clock a host test drives: homie_now_ms() reads
 // g_clock.now, and homie_sleep_ms() advances it and records the sleep.
-#include <homie/homie_clock.h>
+#include <ebus/homie/homie_clock.h>
 
 struct FakeClock {
     uint32_t now = 0;

@@ -1,8 +1,8 @@
-#include <homie/homie_json.h>
-#include <homie/Property.h>
-#include <homie/Node.h>
-#include <homie/homie.h>        // HOMIE_* key macros
-#include <util/jsonUtils.h>     // jsonExists
+#include <ebus/homie/homie_json.h>
+#include <ebus/homie/Property.h>
+#include <ebus/homie/Node.h>
+#include <ebus/homie/homie.h>        // HOMIE_* key macros
+#include <ebus/homie/jsonUtils.h>     // jsonExists
 #include <string.h>
 
 // Bodies moved verbatim from Property::from_dict / Property::serializeInto /

@@ -3,8 +3,8 @@
 // in-flight accounting, and the /set subscription with its retries.
 
 #include <unity.h>
-#include <homie/Device.h>
-#include <homie/homie_settable.h>
+#include <ebus/homie/Device.h>
+#include <ebus/homie/homie_settable.h>
 #include "../support/fake_clock.h"
 #include "../support/fake_transport.h"
 #include "../support/log_capture.h"

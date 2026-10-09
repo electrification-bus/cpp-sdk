@@ -1,13 +1,13 @@
 #pragma once
-#include <homie/homie_transport.h>
+#include <ebus/homie/homie_transport.h>
 
 #include <ArduinoJson.h>
-#include <homie/Device.h>
-#include <homie/Node.h>
-#include <homie/Property.h>
-#include <homie/homie.h>
-#include <homie/homie_limits.h>
-#include <homie/controller_inbox.h>
+#include <ebus/homie/Device.h>
+#include <ebus/homie/Node.h>
+#include <ebus/homie/Property.h>
+#include <ebus/homie/homie.h>
+#include <ebus/homie/homie_limits.h>
+#include <ebus/homie/controller_inbox.h>
 // Maximum discovered devices
 #define MAX_DISCOVERED_DEVICES 16
 

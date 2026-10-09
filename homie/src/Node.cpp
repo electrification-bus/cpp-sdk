@@ -1,9 +1,9 @@
-#include <homie/homie.h>
-#include <homie/homie_id.h>
-#include <homie/Node.h>
-#include <homie/Property.h>
-#include <homie/Device.h>
-#include <homie/homie_log.h>
+#include <ebus/homie/homie.h>
+#include <ebus/homie/homie_id.h>
+#include <ebus/homie/Node.h>
+#include <ebus/homie/Property.h>
+#include <ebus/homie/Device.h>
+#include <ebus/homie/homie_log.h>
 #include <stdio.h>
 #include <string.h>
 

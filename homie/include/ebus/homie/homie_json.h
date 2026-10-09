@@ -11,7 +11,7 @@
 // Nothing needed private access: serialization reads public accessors and from_dict()
 // writes through public setters, so no friendship is involved.
 //
-// Include this only where JSON is actually handled — src/homie/Device.cpp, the
+// Include this only where JSON is actually handled — homie/src/Device.cpp, the
 // controller, and homie_json.cpp itself.
 
 #include <ArduinoJson.h>
