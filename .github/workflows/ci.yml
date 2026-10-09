@@ -33,6 +33,21 @@ jobs:
       - name: Test
         run: ctest --test-dir build-core --output-on-failure
 
+      # ebus_mqtt depends on nothing: each of its sources and headers must compile with
+      # its own include directory as the only one, so a Homie or ArduinoJson include fails.
+      - name: ebus_mqtt alone
+        run: |
+          set -e
+          flags="-std=c++17 -Wall -Wextra -Werror -I mqtt/include"
+          for f in mqtt/src/*.cpp; do
+            echo "$f"
+            ${{ matrix.cxx }} $flags -c "$f" -o /dev/null
+          done
+          for h in mqtt/include/ebus/mqtt/*.h; do
+            echo "$h"
+            echo "#include <${h#mqtt/include/}>" | ${{ matrix.cxx }} $flags -x c++ -c - -o /dev/null
+          done
+
   # The POSIX port (ports/posix): the core on Linux over Paho MQTT C, its demo programs,
   # and end-to-end tests against a mosquitto each test starts on a free localhost port.
   posix-port:
