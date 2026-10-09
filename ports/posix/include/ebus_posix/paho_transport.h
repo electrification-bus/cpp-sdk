@@ -72,10 +72,11 @@ class PahoTransport final : public HomieTransport {
     // HomieTransport. publish() and subscribe(): loop() thread only. While the link is
     // down publish() holds or drops the message (see PublishHold) and returns false.
     using HomieTransport::publish;
+    using HomieTransport::queue_publish;
     bool publish(const char* topic, const char* payload, int length, bool retained,
                  int qos) override;
     bool queue_publish(const char* topic, const char* payload, int length, bool retained,
-                       Property* source) override;
+                       int qos, mqtt_publish_done_fn done, void* ctx) override;
     bool subscribe(const char* topic, int qos) override;
     bool connected() override;
     int last_error() override { return _last_error; }
@@ -89,7 +90,9 @@ class PahoTransport final : public HomieTransport {
         char payload[Property::VALUE_MAX];
         int length;
         bool retained;
-        Property* source;
+        int qos;
+        mqtt_publish_done_fn done;
+        void* ctx;
     };
 
     friend struct PahoCallbacks;   // Paho's callbacks, in paho_transport.cpp

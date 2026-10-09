@@ -274,14 +274,14 @@ void PahoTransport::drain_queue() {
             _queue_head = (_queue_head + 1) % EBUS_POSIX_PUBLISH_QUEUE;
             _queue_count--;
         }
-        bool sent = publish(item.topic, item.payload, item.length, item.retained,
-                            homie_qos(item.retained));
-        if (item.source) item.source->queued_publish_done(item.payload, item.length, sent);
+        bool sent = publish(item.topic, item.payload, item.length, item.retained, item.qos);
+        if (item.done) item.done(item.ctx, item.payload, item.length, sent);
     }
 }
 
 bool PahoTransport::queue_publish(const char* topic, const char* payload, int length,
-                                  bool retained, Property* source) {
+                                  bool retained, int qos, mqtt_publish_done_fn done,
+                                  void* ctx) {
     if (length < 0) length = 0;
     size_t topic_len = strlen(topic);
     bool ok = false;
@@ -299,7 +299,9 @@ bool PahoTransport::queue_publish(const char* topic, const char* payload, int le
             if (length > 0) memcpy(q.payload, payload, (size_t)length);
             q.length = length;
             q.retained = retained;
-            q.source = source;
+            q.qos = qos;
+            q.done = done;
+            q.ctx = ctx;
             _queue_count++;
             ok = true;
         }
@@ -310,7 +312,7 @@ bool PahoTransport::queue_publish(const char* topic, const char* payload, int le
             homie_logf("PAHO: publish queue full, '%s' dropped (%u dropped)\n", topic,
                        (unsigned)n);
         }
-        if (source) source->queued_publish_done(payload, length, false);
+        if (done) done(ctx, payload, length, false);
     }
     return ok;
 }

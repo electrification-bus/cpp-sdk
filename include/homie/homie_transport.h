@@ -1,9 +1,10 @@
 #pragma once
-// The MQTT client as the Homie layer sees it. Device, Node, Property, the settable table
-// and the controller publish and subscribe only through this interface; a port
+// The MQTT client as the Homie layer sees it: ebus_mqtt's MqttTransport plus the Homie
+// queued publish that reports back to a Property. Device, Node, Property, the settable
+// table and the controller publish and subscribe only through this interface; a port
 // implements it over its own MQTT client (src/platform/mqtt_client.h on the ESP32).
+#include <ebus/mqtt/transport.h>
 #include <stdint.h>
-#include <string.h>
 
 class Property;
 
@@ -14,33 +15,25 @@ class Property;
 #define MAX_DATA_LEN 8192
 #endif
 
-class HomieTransport {
+// A port overrides one of the two queue_publish() overloads:
+//   - MqttTransport's, with a completion callback (a new port), or
+//   - the Property one below (a port written before ebus_mqtt).
+// Each default forwards to, or stands in for, the other. Property calls the Property one.
+class HomieTransport : public MqttTransport {
  public:
-    // Publish exactly `length` bytes (a single 0x00 byte is the Homie empty-string value;
-    // a zero-length retained payload deletes the topic). Main task only. Returns false
-    // when the client is not connected or the publish failed.
-    virtual bool publish(const char* topic, const char* payload, int length, bool retained,
-                         int qos) = 0;
-    // NUL-terminated payload.
-    bool publish(const char* topic, const char* payload, bool retained, int qos) {
-        return publish(topic, payload, (int)strlen(payload), retained, qos);
-    }
+    using MqttTransport::queue_publish;
 
-    // Publish from ANY task: the port hands the message to the task that owns the client.
-    // QoS follows homie_qos(retained). When `source` is not null the port calls
-    // source->queued_publish_done(payload, length, sent) exactly once, when the message
-    // is sent or dropped, including when this call itself fails.
+    // Default for a port that overrides only the Property overload: no queue, so the
+    // message is refused and `done` is told so.
+    bool queue_publish(const char* topic, const char* payload, int length, bool retained,
+                       int qos, mqtt_publish_done_fn done, void* ctx) override;
+
+    // Publish from ANY task at homie_qos(retained). When `source` is not null,
+    // source->queued_publish_done(payload, length, sent) is called exactly once, when the
+    // message is sent or dropped, including when this call itself fails. The default
+    // forwards to the overload above with a callback that does that.
     virtual bool queue_publish(const char* topic, const char* payload, int length,
-                               bool retained, Property* source) = 0;
-
-    // Subscribe one topic filter. Main task only, and never from inside the receive
-    // callback: a client that waits for the SUBACK delivers other messages meanwhile.
-    virtual bool subscribe(const char* topic, int qos) = 0;
-
-    virtual bool connected() = 0;
-
-    // The client's error code for the last failed operation, for logs only.
-    virtual int last_error() = 0;
+                               bool retained, Property* source);
 
  protected:
     ~HomieTransport() {}
