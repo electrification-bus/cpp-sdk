@@ -8,6 +8,7 @@ project(ebus_mqtt LANGUAGES CXX)
 
 add_library(ebus_mqtt STATIC
     src/publish_hold.cpp
+    src/reconnect.cpp
 )
 target_include_directories(ebus_mqtt PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(ebus_mqtt PUBLIC cxx_std_17)

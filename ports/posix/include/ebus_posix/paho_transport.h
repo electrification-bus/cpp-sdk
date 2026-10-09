@@ -93,8 +93,11 @@ class PahoTransport final : public HomieTransport {
     };
 
     friend struct PahoCallbacks;   // Paho's callbacks, in paho_transport.cpp
+    // The steps of mqtt_after_connect(), in paho_transport.cpp.
     static bool send_held(void* ctx, const char* topic, const char* payload, int length,
                           bool retained, int qos);
+    static bool resubscribe_all(void* ctx);
+    static void notify_connected(void* ctx, bool first);
 
     bool try_connect();
     bool send(const char* topic, const char* payload, int length, bool retained, int qos);
@@ -123,6 +126,7 @@ class PahoTransport final : public HomieTransport {
     bool _was_up = false;
     bool _stopped = false;
     bool _attempted = false;
+    int _held_at_connect = 0;
     uint32_t _next_attempt_ms = 0;
     int _last_error = 0;
 
