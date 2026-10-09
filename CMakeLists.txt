@@ -1,10 +1,11 @@
 # Builds the core without PlatformIO, for Zephyr, embedded Linux, or a host check.
 # Usage from a parent project: add_subdirectory(path/to/cpp-sdk) and link ebus_core, the
-# umbrella, or one component target (ebus_mqtt).
+# umbrella, or one component target (ebus_mqtt, ebus_discovery).
 cmake_minimum_required(VERSION 3.18)
 project(ebus_core LANGUAGES CXX)
 
 add_subdirectory(mqtt)
+add_subdirectory(discovery)
 
 add_library(ebus_core STATIC
     src/homie/controller.cpp
@@ -20,12 +21,11 @@ add_library(ebus_core STATIC
     src/homie/homie_transport.cpp
     src/homie/Node.cpp
     src/homie/Property.cpp
-    src/platform/broker_discovery.cpp
     src/util/jsonUtils.cpp
 )
 target_include_directories(ebus_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(ebus_core PUBLIC cxx_std_17)
-target_link_libraries(ebus_core PUBLIC ebus_mqtt)
+target_link_libraries(ebus_core PUBLIC ebus_mqtt ebus_discovery)
 
 # ArduinoJson, the core's one dependency (header-only). A parent project that already has
 # an ArduinoJson target keeps it. Otherwise the release PlatformIO uses (library.json,
@@ -61,6 +61,7 @@ endif()
 if(_ebus_core_top_level AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(ebus_core PRIVATE -Wall -Wextra)
     target_compile_options(ebus_mqtt PRIVATE -Wall -Wextra)
+    target_compile_options(ebus_discovery PRIVATE -Wall -Wextra)
 endif()
 
 # Compiles every public header in a translation unit of its own, so a header that needs
@@ -84,6 +85,7 @@ if(EBUS_CORE_CHECK_HEADERS)
         endif()
     endfunction()
     ebus_header_check(ebus_mqtt ${CMAKE_CURRENT_SOURCE_DIR}/mqtt/include)
+    ebus_header_check(ebus_discovery ${CMAKE_CURRENT_SOURCE_DIR}/discovery/include)
     ebus_header_check(ebus_core ${CMAKE_CURRENT_SOURCE_DIR}/include)
 endif()
 

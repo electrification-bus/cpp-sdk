@@ -18,5 +18,5 @@
     "proxy-publishers"
   ],
   "implements": {},
-  "notes": "Partial, so not listed: mdns-discovery (the core holds the service names, TXT keys and broker-record parsing; a port browses and advertises) and jsonschema-format ($format is stored and json payloads are not checked against it)."
+  "notes": "Partial, so not listed: mdns-discovery (the core holds the service names, the TXT records and broker selection over an mDNS interface; a port implements that interface, and the POSIX port has none yet) and jsonschema-format ($format is stored and json payloads are not checked against it)."
 }
