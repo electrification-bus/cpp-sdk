@@ -48,6 +48,20 @@ jobs:
             echo "#include <${h#mqtt/include/}>" | ${{ matrix.cxx }} $flags -x c++ -c - -o /dev/null
           done
 
+      # ebus_discovery likewise: its own include directory and nothing else.
+      - name: ebus_discovery alone
+        run: |
+          set -e
+          flags="-std=c++17 -Wall -Wextra -Werror -I discovery/include"
+          for f in discovery/src/*.cpp; do
+            echo "$f"
+            ${{ matrix.cxx }} $flags -c "$f" -o /dev/null
+          done
+          for h in discovery/include/ebus/discovery/*.h; do
+            echo "$h"
+            echo "#include <${h#discovery/include/}>" | ${{ matrix.cxx }} $flags -x c++ -c - -o /dev/null
+          done
+
   # The POSIX port (ports/posix): the core on Linux over Paho MQTT C, its demo programs,
   # and end-to-end tests against a mosquitto each test starts on a free localhost port.
   posix-port:
