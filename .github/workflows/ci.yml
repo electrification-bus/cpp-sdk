@@ -62,6 +62,22 @@ jobs:
             echo "#include <${h#discovery/include/}>" | ${{ matrix.cxx }} $flags -x c++ -c - -o /dev/null
           done
 
+      # ebus_homie: its own include directory, ebus_mqtt's and ArduinoJson's (fetched by
+      # Configure), so an ebus_discovery or old-path include fails.
+      - name: ebus_homie alone
+        run: |
+          set -e
+          flags="-std=c++17 -Wall -Wextra -Werror -I homie/include -I mqtt/include"
+          flags="$flags -I build-core/_deps/arduinojson-src/src"
+          for f in homie/src/*.cpp; do
+            echo "$f"
+            ${{ matrix.cxx }} $flags -c "$f" -o /dev/null
+          done
+          for h in homie/include/ebus/homie/*.h; do
+            echo "$h"
+            echo "#include <${h#homie/include/}>" | ${{ matrix.cxx }} $flags -x c++ -c - -o /dev/null
+          done
+
   # The POSIX port (ports/posix): the core on Linux over Paho MQTT C, its demo programs,
   # and end-to-end tests against a mosquitto each test starts on a free localhost port.
   posix-port:
