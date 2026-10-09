@@ -26,7 +26,7 @@ class MqttTransport {
 
 `publish()` and `subscribe()` run on the task that owns the client, never inside its receive callback. `queue_publish()` may be called from any task; the port copies the message for the owning task and calls `done(ctx, payload, length, sent)` exactly once per call when `done` is set, including when the call itself fails.
 
-The Homie layer uses `HomieTransport` (`homie/homie_transport.h`), which derives from `MqttTransport` and adds `queue_publish(topic, payload, length, retained, Property* source)`. Property calls that overload; by default it forwards to the generic one at `homie_qos(retained)`, with a callback that calls `source->queued_publish_done()`. A port overrides one of the two:
+The Homie layer uses `HomieTransport` (`ebus/homie/homie_transport.h`), which derives from `MqttTransport` and adds `queue_publish(topic, payload, length, retained, Property* source)`. Property calls that overload; by default it forwards to the generic one at `homie_qos(retained)`, with a callback that calls `source->queued_publish_done()`. A port overrides one of the two:
 
 | Overrides | Ports |
 |---|---|
@@ -62,4 +62,4 @@ Until the flush has finished the port keeps treating the link as down, so a publ
 
 `ebus_mqtt` has `mqtt/include` as its only include directory. CI (`core-host-build`, step "ebus_mqtt alone") compiles each source and header in `mqtt/` with that one `-I` and nothing else, and the `ebus_mqtt_header_check` target compiles each header against `ebus_mqtt` alone. Its Unity suites are `test/test_mqtt_*`, which link `ebus_mqtt` without `ebus_core`. A project that wants only this layer can `add_subdirectory(<path>/cpp-sdk/mqtt)`.
 
-PlatformIO builds it as part of the single `ebus_core` library: `library.json` compiles `src/` and `mqtt/src/` and adds `mqtt/include` to the include path, which PlatformIO also gives the library's dependents.
+PlatformIO builds it as part of the single `ebus_core` library: `library.json` compiles `mqtt/src/` and adds `mqtt/include` to the include path, which PlatformIO also gives the library's dependents.

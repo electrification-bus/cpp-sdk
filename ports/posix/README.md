@@ -1,6 +1,6 @@
 # POSIX port
 
-The eBus core ([`doc/core.md`](../../doc/core.md)) on Linux and macOS: a `HomieTransport` over the Eclipse Paho MQTT C client, the clock and log bindings, a demo device, a demo controller, and end-to-end tests against a real mosquitto. CMake only; PlatformIO never builds this directory, because the root `library.json` limits a PlatformIO build to `src/` and `mqtt/src/`.
+The eBus core ([`doc/core.md`](../../doc/core.md)) on Linux and macOS: a `HomieTransport` over the Eclipse Paho MQTT C client, the clock and log bindings, a demo device, a demo controller, and end-to-end tests against a real mosquitto. CMake only; PlatformIO never builds this directory, because the root `library.json` limits a PlatformIO build to `mqtt/src/`, `discovery/src/` and `homie/src/`.
 
 | Path | Contents |
 |---|---|

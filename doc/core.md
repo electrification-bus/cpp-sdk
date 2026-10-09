@@ -2,23 +2,25 @@
 
 The portable part of the eBus / Homie 5 SDK: the Homie device model, `/set` dispatch and the controller, depending on the C and C++ standard libraries and ArduinoJson, with no Arduino, ESP-IDF or FreeRTOS header. It targets other MCUs and operating systems too (Zephyr, FreeRTOS on STM32 or NXP, embedded Linux). A port supplies the MQTT client, the console and the clock through the interfaces below.
 
+The headers below are the `ebus_homie` target (sources in `homie/`): the Homie model over `ebus_mqtt` ([`mqtt.md`](mqtt.md)), with ArduinoJson and without `ebus_discovery` ([`discovery.md`](discovery.md)). The `ebus_core` target links all three.
+
 | Header | Contents |
 |---|---|
-| `homie/Device.h`, `homie/Node.h`, `homie/Property.h` | The Homie object model: device tree, `$state` / `$description` lifecycle, property values and the publish-on-change gate |
-| `homie/homie_settable.h` | The settable table: `/set` registration, dispatch, `deliver_local_set()` |
-| `homie/controller.h` | Controller role: discovery, device tree from `$description`, `controller_set_property()` |
-| `homie/homie_transport.h` | `HomieTransport`, the MQTT interface a port implements: `ebus_mqtt`'s `MqttTransport` ([`mqtt.md`](mqtt.md)) plus the Property `queue_publish()` adapter; `MAX_DATA_LEN`; `mqtt_qos` and `homie_qos()` |
-| `homie/homie_log.h` | `homie_logf()` / `homie_logln()` and the sink a port binds |
-| `homie/homie_clock.h` | `homie_now_ms()` / `homie_sleep_ms()` and the hooks a port binds |
-| `homie/homie_json.h`, `util/jsonUtils.h` | `$description` (de)serialization helpers (ArduinoJson) |
-| `homie/homie.h` | Homie version, topic domain and prefix (`USE_EBUS_TOPIC` at build time, `homie_set_topic_domain()` at run time), datatype and attribute strings |
-| `homie/homie_limits.h` | Longest ids and topics; every buffer is sized from these. esp32-sdk's `./ebus-esp32 generate` reads this file to check `device.yml` |
-| `homie/homie_enums.h` | `PropertyDatatype` and `Unit` enums and their Homie strings |
-| `homie/homie_descriptor.h` | `PropertyDesc`, the declarative property descriptor |
-| `homie/homie_id.h` | Id sanitizing, MAC-based ids, id templates, child ids |
-| `homie/homie_datatype.h` | Payload validation and parsing for every Homie datatype |
-| `homie/controller_inbox.h` | Controller message inbox (caller-owned arena) and topic parser |
-| `homie/ebus_vocabulary.h` | Registered eBus device and capability type strings |
+| `ebus/homie/Device.h`, `ebus/homie/Node.h`, `ebus/homie/Property.h` | The Homie object model: device tree, `$state` / `$description` lifecycle, property values and the publish-on-change gate |
+| `ebus/homie/homie_settable.h` | The settable table: `/set` registration, dispatch, `deliver_local_set()` |
+| `ebus/homie/controller.h` | Controller role: discovery, device tree from `$description`, `controller_set_property()` |
+| `ebus/homie/homie_transport.h` | `HomieTransport`, the MQTT interface a port implements: `ebus_mqtt`'s `MqttTransport` ([`mqtt.md`](mqtt.md)) plus the Property `queue_publish()` adapter; `MAX_DATA_LEN`; `mqtt_qos` and `homie_qos()` |
+| `ebus/homie/homie_log.h` | `homie_logf()` / `homie_logln()` and the sink a port binds |
+| `ebus/homie/homie_clock.h` | `homie_now_ms()` / `homie_sleep_ms()` and the hooks a port binds |
+| `ebus/homie/homie_json.h`, `ebus/homie/jsonUtils.h` | `$description` (de)serialization helpers (ArduinoJson) |
+| `ebus/homie/homie.h` | Homie version, topic domain and prefix (`USE_EBUS_TOPIC` at build time, `homie_set_topic_domain()` at run time), datatype and attribute strings |
+| `ebus/homie/homie_limits.h` | Longest ids and topics; every buffer is sized from these. esp32-sdk's `./ebus-esp32 generate` reads the four base values from `include/homie/homie_limits.h`, which repeats them, to check `device.yml` |
+| `ebus/homie/homie_enums.h` | `PropertyDatatype` and `Unit` enums and their Homie strings |
+| `ebus/homie/homie_descriptor.h` | `PropertyDesc`, the declarative property descriptor |
+| `ebus/homie/homie_id.h` | Id sanitizing, MAC-based ids, id templates, child ids |
+| `ebus/homie/homie_datatype.h` | Payload validation and parsing for every Homie datatype |
+| `ebus/homie/controller_inbox.h` | Controller message inbox (caller-owned arena) and topic parser |
+| `ebus/homie/ebus_vocabulary.h` | Registered eBus device and capability type strings |
 | `platform/broker_discovery.h`, `platform/mdns_strings.h` | Forward to `ebus_discovery`'s `ebus/discovery/broker_discovery.h` and `ebus/discovery/mdns_strings.h` ([`discovery.md`](discovery.md)) |
 
 ## What a port implements
@@ -48,14 +50,14 @@ The POSIX port in [`ports/posix/`](../ports/posix/) implements the same pieces o
 
 ## Rules for code in the core
 
-- Include only standard headers, ArduinoJson and other core headers; `ebus_mqtt` (`mqtt/`) and `ebus_discovery` (`discovery/`) each include only standard headers and their own. CI enforces all three.
+- `ebus_homie` (`homie/`) includes only standard headers, ArduinoJson, its own headers and `ebus_mqtt`'s; `ebus_mqtt` (`mqtt/`) and `ebus_discovery` (`discovery/`) each include only standard headers and their own. CI enforces all three.
 - No Arduino `String`, no STL containers, no lambdas: callers pass buffers.
 - No new dynamic allocation. What allocates today predates the move: `Device::addNode()` (each `Node`), `Device::addNodePropertiesFromConfigJson()` (each `Property`, controller path only), the `$description` buffer (`MAX_DATA_LEN` bytes, once, on first use), the controller's `Device` per discovered device, and ArduinoJson's `JsonDocument` pools.
 - C++17, GCC or Clang (`__atomic` builtins, `__attribute__((format))`).
 
 ## Building
 
-**PlatformIO**: `library.json` makes this repository one library that declares its ArduinoJson dependency, compiles only `src/`, `mqtt/src/` and `discovery/src/`, and puts `include/`, `mqtt/include/` and `discovery/include/` on the include path of the library and of the project that uses it; a project adds it with a `lib_deps` git URL. A library is compiled without the project's `build_src_flags`, so a macro the core reads (`MAX_DATA_LEN`, `CONTROLLER_INBOX_BYTES`, `USE_EBUS_TOPIC`) must be set in `build_flags`.
+**PlatformIO**: `library.json` makes this repository one library that declares its ArduinoJson dependency, compiles only `mqtt/src/`, `discovery/src/` and `homie/src/`, and puts `include/`, `mqtt/include/`, `discovery/include/` and `homie/include/` on the include path of the library and of the project that uses it; a project adds it with a `lib_deps` git URL. A library is compiled without the project's `build_src_flags`, so a macro the core reads (`MAX_DATA_LEN`, `CONTROLLER_INBOX_BYTES`, `USE_EBUS_TOPIC`) must be set in `build_flags`.
 
 **CMake**, for any other build system or host:
 
@@ -65,13 +67,13 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-A parent project uses `add_subdirectory(<path>/cpp-sdk)` and links the `ebus_core` target, which carries its include directory, C++17, ArduinoJson, `ebus_mqtt` and `ebus_discovery`. A parent that already defines an `ArduinoJson` target keeps it; otherwise `FetchContent` downloads ArduinoJson 7.4.3, the release esp32-sdk's `platformio.ini` uses, checked against its SHA-256, so both builds serialize `$description` with the same code. `find_package()` was not used because few systems package ArduinoJson and none would pin that release. To build offline, pass `-DFETCHCONTENT_SOURCE_DIR_ARDUINOJSON=<checkout>`. `-DEBUS_CORE_EBUS_TOPIC=ON` defines `USE_EBUS_TOPIC`, which moves the topic root from `homie/5` to `ebus/5`; the ESP32 firmware sets it in `platformio.ini`. Built as the top-level project, the targets `ebus_core_header_check`, `ebus_mqtt_header_check` and `ebus_discovery_header_check` also compile each public header in a translation unit of its own (a component's header against that component alone), and the Unity suites in `test/` are built and registered with CTest (`-DEBUS_CORE_TESTS=OFF` skips them).
+A parent project uses `add_subdirectory(<path>/cpp-sdk)` and links the `ebus_core` target, an INTERFACE target that links `ebus_mqtt`, `ebus_discovery` and `ebus_homie` and carries `include/`, the pre-split header paths. `ebus_homie` carries its include directory, C++17, ArduinoJson and `ebus_mqtt`; a project that wants only the Homie model can `add_subdirectory(<path>/cpp-sdk/homie)`, which adds `ebus_mqtt` too. A parent that already defines an `ArduinoJson` target keeps it; otherwise `FetchContent` downloads ArduinoJson 7.4.3, the release esp32-sdk's `platformio.ini` uses, checked against its SHA-256, so both builds serialize `$description` with the same code. `find_package()` was not used because few systems package ArduinoJson and none would pin that release. To build offline, pass `-DFETCHCONTENT_SOURCE_DIR_ARDUINOJSON=<checkout>`. `-DEBUS_CORE_EBUS_TOPIC=ON` defines `USE_EBUS_TOPIC`, which moves the topic root from `homie/5` to `ebus/5`; the ESP32 firmware sets it in `platformio.ini`. Built as the top-level project, the targets `ebus_core_header_check`, `ebus_mqtt_header_check`, `ebus_discovery_header_check` and `ebus_homie_header_check` also compile each public header in a translation unit of its own (a component's header against that component alone), and the Unity suites in `test/` are built and registered with CTest (`-DEBUS_CORE_TESTS=OFF` skips them).
 
-CI (`core-host-build` in `.github/workflows/ci.yml`) runs that CMake build and the tests with GCC and Clang, warnings as errors, and only the core's include directory and ArduinoJson on the core's path.
+CI (`core-host-build` in `.github/workflows/ci.yml`) runs that CMake build and the tests with GCC and Clang, warnings as errors. Its step "ebus_homie alone" compiles each source and header in `homie/` with `homie/include`, `mqtt/include` and ArduinoJson as the only include directories. The Homie suites in `test/` link `ebus_homie` without `ebus_core`.
 
 ## Include paths
 
-The headers keep the paths they had under the project's `include/` (`<homie/Device.h>`, `<util/jsonUtils.h>`, `<platform/broker_discovery.h>`), so no `#include` in esp32-sdk changed when they moved. The two `platform/` headers now forward to `ebus_discovery`. `platform/` and `util/` are the wrong names for a portable library; renaming them (to `ebus/`, say) takes one sweep here and in esp32-sdk.
+The Homie headers are `<ebus/homie/...>`. The paths they had under the project's `include/` (`<homie/Device.h>`, `<util/jsonUtils.h>`, `<platform/broker_discovery.h>`) are forwarding headers to `ebus_homie` and `ebus_discovery`, so no `#include` in esp32-sdk changed when they moved. esp32-sdk's `./ebus-esp32 generate` parses `include/homie/homie_limits.h` for `HOMIE_DEVICE_ID_MAX`, `HOMIE_NODE_ID_MAX`, `HOMIE_PROPERTY_ID_MAX` and `HOMIE_TOPIC_MAX`, so that forwarder repeats those four `#define`s; a value that differs from `ebus/homie/homie_limits.h` is a macro redefinition warning, which fails CI.
 
 ## Still in esp32-sdk
 
