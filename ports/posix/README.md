@@ -40,7 +40,7 @@ The device publishes `<domain>/5/<id>` with `switch/on` (boolean, settable) and 
 |---|---|
 | Inbound messages | Paho's receive thread copies each message into a mutex-guarded arena (`EBUS_POSIX_INBOX_BYTES`, 64 KB) and returns. `PahoTransport::loop()`, on the application's thread, hands each one to `settable_dispatch()` if the settable table claims the topic, else to the fallback (`controller_mqtt_callback()` for a controller). Nothing that publishes or subscribes runs on Paho's thread. |
 | `queue_publish()` | `PahoTransport` overrides the generic overload (`ebus_mqtt`'s `MqttTransport`); a Property reaches it through `HomieTransport`'s adapter. Any thread: copies into a fixed ring (`EBUS_POSIX_PUBLISH_QUEUE`, 64 entries of `Property::VALUE_MAX`), which `loop()` sends. The completion callback is called exactly once per call, from `loop()`, or at once when the ring is full or the message too long. |
-| Connect | Clean session, keepalive 60 s, Last Will `<root>/$state` = `lost`, retained, at `homie_qos(true)`. After each connect, `mqtt_after_connect()` runs, in order: flush the hold, subscribe every settable topic, call the application's `on_connected(first)`. The device publishes the tree on the first and `publishStateTree()` on later ones, as the ESP32 firmware does. |
+| Connect | Clean session, keepalive 60 s, Last Will `<root>/$state` = `lost`, retained, at `homie_qos(true)`. After each connect, `mqtt_after_connect()` runs, in order: flush the hold, subscribe every settable topic, call the application's `on_connected(first)`. The device publishes the tree on the first; on later ones it calls `forgetDescriptionHash()` on every device and publishes the tree again, so a broker that lost its retained store gets every `$description` and value back ([`doc/core.md`](../../doc/core.md#after-a-reconnect)). |
 | Link down | `publish()` holds or drops (below) and returns false; `loop()` reconnects at once, then every `--reconnect-ms`. |
 | Settable table | `EBUS_POSIX_SETTABLE_CAPACITY` (64) static entries. No `NodeEntity` on this port, so no driver call is bound; a settable reaches the application through a `settable_handler_t`, registered with `ebus_posix_register_settable()`, which also works before the first connect. |
 
@@ -50,5 +50,4 @@ The device publishes `<domain>/5/<id>` with `switch/on` (boolean, settable) and 
 
 ## Known gaps
 
-- After a broker restart that lost its retained store, the device re-publishes `$state` and the values that changed while it was down, but not `$description` or unchanged values (the ESP32 firmware re-publishes only `$state`). Calling `publishTree()` on reconnect would not fix it: `Device::publish()` skips a `$description` whose hash matches the last one sent, and nothing resets that hash on reconnect. A controller that subscribes afterwards sees the device's state but cannot describe it.
 - No TLS.

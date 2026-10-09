@@ -28,10 +28,10 @@ class MqttTransport {
 
 The Homie layer uses `HomieTransport` (`homie/homie_transport.h`), which derives from `MqttTransport` and adds `queue_publish(topic, payload, length, retained, Property* source)`. Property calls that overload; by default it forwards to the generic one at `homie_qos(retained)`, with a callback that calls `source->queued_publish_done()`. A port overrides one of the two:
 
-| Port | Overrides | Example |
-|---|---|---|
-| New | `queue_publish(..., qos, done, ctx)` | `PahoTransport` in `ports/posix/` |
-| Written against 0.1.0 | `queue_publish(..., Property* source)` | esp32-sdk's `MqttClientTransport` |
+| Overrides | Ports |
+|---|---|
+| `queue_publish(..., qos, done, ctx)` | `PahoTransport` in `ports/posix/`; esp32-sdk's `MqttClientTransport` |
+| `queue_publish(..., Property* source)` | A port written against 0.1.0 |
 
 A `HomieTransport` that overrides neither refuses every queued publish, logs an error, and reports it to `done` as not sent.
 

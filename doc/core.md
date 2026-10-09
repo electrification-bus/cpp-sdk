@@ -37,6 +37,15 @@ The controller needs `controller_init(&transport, ...)` and the receive callback
 
 The POSIX port in [`ports/posix/`](../ports/posix/) implements the same pieces over Eclipse Paho MQTT C; its README maps each one.
 
+## After a reconnect
+
+`Device::publish()` skips a `$description` byte-identical to the last one that device sent, so a structural change that leaves the description as it was (`notifyStructuralChange()`) and a repeated `publishTree()` send none. The skip trusts the broker to still hold the retained copy. When the port cannot trust that, it calls `forgetDescriptionHash()` on every device in the tree, then `publishTree()`, once the hold is flushed and the topics re-subscribed ([`mqtt.md`](mqtt.md#after-a-connect)): each device goes init, `$description`, every value, ready, children before parents. That covers two cases:
+
+- The hold evicted or dropped publishes while the link was down.
+- The port cannot tell whether the broker kept its retained store, as after any reconnect: CONNACK reports a session, not retained messages, and a broker restarted without persistence has lost them all.
+
+`publishStateTree()`, which re-asserts each `$state` over the Last Will's `lost`, suffices only when the broker is known to have kept its retained store. The POSIX demo device republishes the whole tree this way on every reconnect (`on_connected()` in [`ports/posix/apps/device_main.cpp`](../ports/posix/apps/device_main.cpp)).
+
 ## Rules for code in the core
 
 - Include only standard headers, ArduinoJson and other core headers; `ebus_mqtt` (`mqtt/`) and `ebus_discovery` (`discovery/`) each include only standard headers and their own. CI enforces all three.

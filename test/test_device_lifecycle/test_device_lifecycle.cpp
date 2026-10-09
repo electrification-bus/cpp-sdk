@@ -160,6 +160,88 @@ static void test_reconnect_republishes_state_only(void) {
     TEST_ASSERT_EQUAL_INT(2, client.count());
 }
 
+// A second whole-tree republish sends every state and value but skips each $description
+// the broker was last sent, and a structural change that leaves it as it was sends nothing.
+static void test_republish_skips_an_unchanged_description(void) {
+    Device root, relay;
+    root.init("Root", "root", "generic", &client);
+    add_node(root, "status", "Status");
+    relay.init("Relay", "root-relay", "generic", &client);
+    root.addChild(&relay);
+    add_node(relay, "led", "LED");
+    root.publishTree();
+    client.clear();
+
+    root.notifyStructuralChange();
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, client.count(), "a no-op structural change published");
+
+    root.publishTree();
+
+    expect(0, "homie/5/root-relay/$state", "init");
+    expect(1, "homie/5/root-relay/led/value", "v");
+    expect(2, "homie/5/root-relay/$state", "ready");
+    expect(3, "homie/5/root/$state", "init");
+    expect(4, "homie/5/root/status/value", "v");
+    expect(5, "homie/5/root/$state", "ready");
+    TEST_ASSERT_EQUAL_INT(6, client.count());
+}
+
+// forgetDescriptionHash() is the recovery path: the next publish sends $description again,
+// for the device it was called on only.
+static void test_forget_description_hash_forces_the_description(void) {
+    Device root, relay;
+    root.init("Root", "root", "generic", &client);
+    add_node(root, "status", "Status");
+    relay.init("Relay", "root-relay", "generic", &client);
+    root.addChild(&relay);
+    add_node(relay, "led", "LED");
+    root.publishTree();
+    client.clear();
+
+    root.forgetDescriptionHash();
+    relay.forgetDescriptionHash();
+    root.publishTree();
+
+    expect(0, "homie/5/root-relay/$state", "init");
+    expect(1, "homie/5/root-relay/$description", nullptr);
+    expect(2, "homie/5/root-relay/led/value", "v");
+    expect(3, "homie/5/root-relay/$state", "ready");
+    expect(4, "homie/5/root/$state", "init");
+    expect(5, "homie/5/root/$description", nullptr);
+    expect(6, "homie/5/root/status/value", "v");
+    expect(7, "homie/5/root/$state", "ready");
+    TEST_ASSERT_EQUAL_INT(8, client.count());
+    assert_descriptions_only_while_init();
+
+    // Sent, so remembered again: the next republish skips both.
+    client.clear();
+    root.publishTree();
+    TEST_ASSERT_EQUAL_INT(-1, find_attr(root, "$description", nullptr));
+    TEST_ASSERT_EQUAL_INT(-1, find_attr(relay, "$description", nullptr));
+
+    client.clear();
+    relay.forgetDescriptionHash();
+    root.publishTree();
+    TEST_ASSERT_TRUE(find_attr(relay, "$description", nullptr) >= 0);
+    TEST_ASSERT_EQUAL_INT(-1, find_attr(root, "$description", nullptr));
+}
+
+// A forced description that fails to send stays forgotten, so the next publish retries it.
+static void test_forced_description_retries_after_a_failed_publish(void) {
+    Device root;
+    root.init("Root", "root", "generic", &client);
+    root.publishTree();
+    root.forgetDescriptionHash();
+    client.publish_result = false;
+    root.publishTree();
+    client.publish_result = true;
+    client.clear();
+
+    root.publishTree();
+
+    TEST_ASSERT_TRUE(find_attr(root, "$description", nullptr) >= 0);
+}
+
 static void test_live_add_child_follows_adding_children_order(void) {
     Device root, kid;
     root.init("Root", "root", "generic", &client);
@@ -234,6 +316,9 @@ int main(int argc, char** argv) {
     RUN_TEST(test_boot_publishes_child_fully_before_parent);
     RUN_TEST(test_boot_orders_a_deeper_tree);
     RUN_TEST(test_reconnect_republishes_state_only);
+    RUN_TEST(test_republish_skips_an_unchanged_description);
+    RUN_TEST(test_forget_description_hash_forces_the_description);
+    RUN_TEST(test_forced_description_retries_after_a_failed_publish);
     RUN_TEST(test_live_add_child_follows_adding_children_order);
     RUN_TEST(test_over_long_id_is_truncated_and_logged_once);
     RUN_TEST(test_id_at_the_limit_is_not_logged);

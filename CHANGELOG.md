@@ -8,10 +8,16 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 - `ebus_discovery`, a CMake target with no dependency (`discovery/`, [doc/discovery.md](doc/discovery.md)): `txt_build_ebus()`, `txt_build_device_info()`, `txt_build_http()` and `txt_build_log()`, which build each advertised service's TXT record from one `EbusIdentity` into a fixed-size `TxtRecord`, with the keys and order of framework.md, ebus-service-discovery and esp32-sdk; `MdnsBackend`, the advertise, browse and resolve interface a port implements over its mDNS stack; `broker_browse()` and `broker_reresolve()`, esp32-sdk's broker selection over that interface; `broker_service_type()`. `ebus_core` links it. PlatformIO still builds one library.
 - Unity suites `test_discovery_txt` and `test_discovery_backend`, which link `ebus_discovery` alone, and a CI step that compiles `ebus_discovery` with only its own include directory.
+- `Device::forgetDescriptionHash()`: the next `publish()` of that device sends `$description` even if it is unchanged. A port calls it on every device before a recovery republish ([doc/core.md](doc/core.md#after-a-reconnect)); the no-op skip in `notifyStructuralChange()` stays. ([#9](https://github.com/electrification-bus/cpp-sdk/issues/9))
 
 ### Changed
 
 - `broker_discovery.h` and `mdns_strings.h` move to `ebus_discovery` as `<ebus/discovery/broker_discovery.h>` and `<ebus/discovery/mdns_strings.h>`; `<platform/broker_discovery.h>` and `<platform/mdns_strings.h>` forward to them. Their suite is now `test_discovery_broker`. `mdns_strings.h` adds the full service types (`MDNS_TYPE_*`), `broker_ca`, `hw_version`, `broker-host` and each auth method value.
+
+### Fixed
+
+- The POSIX demo device republishes the whole tree, `$description` included, on every reconnect (was `publishStateTree()`), so a broker restarted without persistence describes it again. The `reconnect` end-to-end test checks that the root and child `$description` are retained after the restart.
+- `doc/mqtt.md` listed esp32-sdk's `MqttClientTransport` as overriding the Property `queue_publish()`; it overrides the generic one.
 
 ## [0.2.0] - 2026-10-09
 
