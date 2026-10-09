@@ -1,7 +1,7 @@
 #pragma once
 // Binds the core's log sink to a recorder for host tests: it prints nothing, counts the
 // lines that carry "**ERROR" and keeps the last line and the last error line.
-#include <homie/homie_log.h>
+#include <ebus/homie/homie_log.h>
 #include <stdio.h>
 #include <string.h>
 

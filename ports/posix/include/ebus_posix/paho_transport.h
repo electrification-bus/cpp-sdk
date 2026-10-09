@@ -13,9 +13,9 @@
 // transport static, not on a stack. Paho allocates per in-flight message internally,
 // bounded by its in-flight window.
 #include <ebus/mqtt/publish_hold.h>
-#include <homie/controller_inbox.h>
-#include <homie/homie_transport.h>
-#include <homie/Property.h>
+#include <ebus/homie/controller_inbox.h>
+#include <ebus/homie/homie_transport.h>
+#include <ebus/homie/Property.h>
 #include <atomic>
 #include <mutex>
 #include <stdint.h>

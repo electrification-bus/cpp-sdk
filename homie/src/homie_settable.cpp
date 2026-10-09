@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-// The settable table and /set dispatch; see homie/homie_settable.h. The port supplies the
+// The settable table and /set dispatch; see ebus/homie/homie_settable.h. The port supplies the
 // table's storage and calls settable_dispatch() from its own task, never from inside the
 // MQTT receive callback.
-#include <homie/homie_settable.h>
-#include <homie/homie_log.h>
-#include <homie/homie_transport.h>
-#include <homie/Property.h>
+#include <ebus/homie/homie_settable.h>
+#include <ebus/homie/homie_log.h>
+#include <ebus/homie/homie_transport.h>
+#include <ebus/homie/Property.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -198,7 +198,7 @@ static bool call_settable_driver(subscribed_settable_property_t* s, const char* 
 //
 // The port runs an inbound /set through here, and deliver_local_set() takes the IDENTICAL
 // route. One dispatch path, so a driver never needs to care where a set came from. Both
-// must run on the main task (see deliver_local_set() in homie/homie_settable.h), which is
+// must run on the main task (see deliver_local_set() in ebus/homie/homie_settable.h), which is
 // what lets the snapshot go without a lock.
 bool settable_dispatch(const char* topic, const char* value) {
   bool handled = false;

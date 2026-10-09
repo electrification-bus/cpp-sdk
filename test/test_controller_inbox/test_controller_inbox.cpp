@@ -1,9 +1,9 @@
-// Host-side tests for src/homie/controller_inbox.cpp: the inbox that
+// Host-side tests for homie/src/controller_inbox.cpp: the inbox that
 // carries controller messages out of the MQTT receive callback, and the controller's
 // topic parser.
 
 #include <unity.h>
-#include <homie/controller_inbox.h>
+#include <ebus/homie/controller_inbox.h>
 #include <stdio.h>
 #include <string.h>
 

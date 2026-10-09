@@ -1,8 +1,8 @@
 #pragma once
 // The POSIX port's bindings for the core (doc/core.md, "What a port
 // implements"): the clock, the console and the settable table's storage.
-#include <homie/homie_settable.h>
-#include <homie/homie_transport.h>
+#include <ebus/homie/homie_settable.h>
+#include <ebus/homie/homie_transport.h>
 
 class Property;
 

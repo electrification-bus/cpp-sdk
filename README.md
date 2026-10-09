@@ -58,9 +58,10 @@ As the top-level project this builds the libraries below, compiles each public h
 |---|---|---|---|
 | `ebus_mqtt` | The MQTT transport interface (`MqttTransport`), the publishes held while the link is down (`PublishHold`), the reconnect order (`mqtt_after_connect()`) | nothing | [`doc/mqtt.md`](doc/mqtt.md) |
 | `ebus_discovery` | The mDNS contract: each advertised service's TXT record (`txt_build_ebus()` and the rest), the interface a port's mDNS stack implements (`MdnsBackend`), broker service types and broker discovery over that interface | nothing | [`doc/discovery.md`](doc/discovery.md) |
-| `ebus_core` | Everything: the Homie model, `/set` dispatch, the controller, validation, `ebus_mqtt` and `ebus_discovery` | `ebus_mqtt`, `ebus_discovery`, ArduinoJson | [`doc/core.md`](doc/core.md) |
+| `ebus_homie` | The Homie model (Device, Node, Property, `$state` and `$description`), `/set` dispatch, the controller, id and payload validation, the `HomieTransport` adapter, the log and clock hooks | `ebus_mqtt`, ArduinoJson | [`doc/core.md`](doc/core.md) |
+| `ebus_core` | Umbrella: links the three, and puts `include/`, the pre-split header paths (`<homie/Device.h>`), on the include path | `ebus_mqtt`, `ebus_discovery`, `ebus_homie` | [`doc/core.md`](doc/core.md#include-paths) |
 
-`ebus_mqtt` and `ebus_discovery` each build with only their own include directory (`mqtt/include`, `discovery/include`), so a project can take either alone with `add_subdirectory(<path>/cpp-sdk/mqtt)` or `add_subdirectory(<path>/cpp-sdk/discovery)`.
+`ebus_mqtt` and `ebus_discovery` each build with only their own include directory (`mqtt/include`, `discovery/include`), and `ebus_homie` with its own and `ebus_mqtt`'s, so a project can take one with `add_subdirectory(<path>/cpp-sdk/mqtt)`, `add_subdirectory(<path>/cpp-sdk/discovery)` or `add_subdirectory(<path>/cpp-sdk/homie)`.
 
 ## Writing a port
 
@@ -68,16 +69,16 @@ A port binds four things, all documented in [`doc/core.md`](doc/core.md) ("What 
 
 | Piece | Header | What the port does |
 |---|---|---|
-| MQTT transport | `homie/homie_transport.h` | Subclasses `HomieTransport`, which is `ebus_mqtt`'s `MqttTransport` plus a Homie adapter: `publish()`, `subscribe()` and `queue_publish()` with a completion callback ([`doc/mqtt.md`](doc/mqtt.md)) |
-| Clock | `homie/homie_clock.h` | `homie_clock_bind(now_ms, sleep_ms)` |
-| Console | `homie/homie_log.h` | `homie_log_bind(vprintf_sink)`; optional, stdout otherwise |
-| Settable table | `homie/homie_settable.h` | Supplies storage to `settable_table_bind()`, routes each claimed `/set` message to `settable_dispatch()` on its own task, and subscribes every settable topic after each connect |
+| MQTT transport | `ebus/homie/homie_transport.h` | Subclasses `HomieTransport`, which is `ebus_mqtt`'s `MqttTransport` plus a Homie adapter: `publish()`, `subscribe()` and `queue_publish()` with a completion callback ([`doc/mqtt.md`](doc/mqtt.md)) |
+| Clock | `ebus/homie/homie_clock.h` | `homie_clock_bind(now_ms, sleep_ms)` |
+| Console | `ebus/homie/homie_log.h` | `homie_log_bind(vprintf_sink)`; optional, stdout otherwise |
+| Settable table | `ebus/homie/homie_settable.h` | Supplies storage to `settable_table_bind()`, routes each claimed `/set` message to `settable_dispatch()` on its own task, and subscribes every settable topic after each connect |
 
 The POSIX port is the reference: [`ports/posix/src/posix_port.cpp`](ports/posix/src/posix_port.cpp) binds the clock, console and settable table, and [`ports/posix/src/paho_transport.cpp`](ports/posix/src/paho_transport.cpp) is the transport. A port should also follow the rules for publishes made while the broker link is down and the reconnect order, both from [ebus-mqtt-client](https://github.com/electrification-bus/ebus-mqtt-client); `ebus_mqtt` provides them as `PublishHold` and `mqtt_after_connect()`, which the POSIX port uses.
 
 ## Using the core from PlatformIO
 
-[`library.json`](library.json) makes this repository one PlatformIO library named `ebus_core` that compiles `src/`, `mqtt/src/` and `discovery/src/`, puts `include/`, `mqtt/include/` and `discovery/include/` on the include path, and depends on ArduinoJson 7.4.3. Add it with a git URL:
+[`library.json`](library.json) makes this repository one PlatformIO library named `ebus_core` that compiles `mqtt/src/`, `discovery/src/` and `homie/src/`, puts `include/`, `mqtt/include/`, `discovery/include/` and `homie/include/` on the include path, and depends on ArduinoJson 7.4.3. Add it with a git URL:
 
 ```ini
 lib_deps =

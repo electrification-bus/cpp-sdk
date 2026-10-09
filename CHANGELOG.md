@@ -4,6 +4,15 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+### Added
+
+- `ebus_homie`, a CMake target (`homie/`, [doc/core.md](doc/core.md)): the Homie model, `/set` dispatch, the controller, id and payload validation, the JSON helpers, `HomieTransport`, and the log and clock hooks. It depends on `ebus_mqtt` and ArduinoJson, not on `ebus_discovery`. A CI step compiles it with only its own, `ebus_mqtt`'s and ArduinoJson's include directories. ([#3](https://github.com/electrification-bus/cpp-sdk/issues/3))
+
+### Changed
+
+- The Homie headers move to `<ebus/homie/...>`, and `util/jsonUtils.h` to `<ebus/homie/jsonUtils.h>`; `<homie/...>` and `<util/jsonUtils.h>` forward to them. `include/homie/homie_limits.h` also repeats the four base limits esp32-sdk's generator reads from it.
+- `ebus_core` is an INTERFACE target that links `ebus_mqtt`, `ebus_discovery` and `ebus_homie`. The Homie suites link `ebus_homie` alone. PlatformIO still builds one library.
+
 ## [0.3.0] - 2026-10-09
 
 ### Added

@@ -1,4 +1,4 @@
-#include <homie/homie_log.h>
+#include <ebus/homie/homie_log.h>
 #include <stdio.h>
 
 static void stdout_vprintf(const char* fmt, va_list args) { vprintf(fmt, args); }

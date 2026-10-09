@@ -1,4 +1,4 @@
-#include <homie/homie_datatype.h>
+#include <ebus/homie/homie_datatype.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>

@@ -1,8 +1,8 @@
 /* A minimally-vibed controller. Claude Code, 12/3/25 drm */
-#include <homie/controller.h>
-#include <homie/homie.h>
-#include <homie/homie_clock.h>
-#include <homie/homie_log.h>
+#include <ebus/homie/controller.h>
+#include <ebus/homie/homie.h>
+#include <ebus/homie/homie_clock.h>
+#include <ebus/homie/homie_log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

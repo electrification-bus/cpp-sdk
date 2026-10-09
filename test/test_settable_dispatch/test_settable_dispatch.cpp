@@ -6,8 +6,8 @@
 // the minimal one below, and the caller bound with the table, stand in for it.
 
 #include <unity.h>
-#include <homie/Device.h>
-#include <homie/homie_settable.h>
+#include <ebus/homie/Device.h>
+#include <ebus/homie/homie_settable.h>
 #include "../support/fake_transport.h"
 #include "../support/log_capture.h"
 

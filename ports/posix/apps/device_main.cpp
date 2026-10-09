@@ -12,13 +12,13 @@
 // whole tree; a reconnect sends every $description again (see on_connected()).
 #include <ebus_posix/paho_transport.h>
 #include <ebus_posix/posix_port.h>
-#include <homie/Device.h>
-#include <homie/homie.h>
-#include <homie/homie_clock.h>
-#include <homie/homie_id.h>
-#include <homie/homie_log.h>
-#include <homie/Node.h>
-#include <homie/Property.h>
+#include <ebus/homie/Device.h>
+#include <ebus/homie/homie.h>
+#include <ebus/homie/homie_clock.h>
+#include <ebus/homie/homie_id.h>
+#include <ebus/homie/homie_log.h>
+#include <ebus/homie/Node.h>
+#include <ebus/homie/Property.h>
 #include <atomic>
 #include <math.h>
 #include <mutex>

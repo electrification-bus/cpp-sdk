@@ -1,4 +1,3 @@
 #pragma once
-#include <ArduinoJson.h>
-
- bool jsonExists(JsonVariant variant);
+// Moved to ebus_homie; this path keeps existing includes working.
+#include <ebus/homie/jsonUtils.h>

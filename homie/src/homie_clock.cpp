@@ -1,4 +1,4 @@
-#include <homie/homie_clock.h>
+#include <ebus/homie/homie_clock.h>
 
 static uint32_t unbound_now_ms() { return 0; }
 static void unbound_sleep_ms(uint32_t ms) { (void)ms; }

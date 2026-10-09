@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-// The run-time topic prefix; see homie_set_topic_domain() in homie/homie.h.
-#include <homie/homie.h>
+// The run-time topic prefix; see homie_set_topic_domain() in ebus/homie/homie.h.
+#include <ebus/homie/homie.h>
 #include <stdio.h>
 #include <string.h>
 
