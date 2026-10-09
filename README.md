@@ -52,7 +52,14 @@ cmake --build build -j
 ctest --test-dir build --output-on-failure
 ```
 
-As the top-level project this builds the `ebus_core` library, compiles each public header on its own, and runs the Unity suites in [`test/`](test/). ArduinoJson 7.4.3 and Unity 2.6.1 are fetched and checked against their SHA-256. A parent CMake project uses `add_subdirectory(<path>/cpp-sdk)` and links `ebus_core`; the tests are then off.
+As the top-level project this builds the libraries below, compiles each public header on its own, and runs the Unity suites in [`test/`](test/). ArduinoJson 7.4.3 and Unity 2.6.1 are fetched and checked against their SHA-256. A parent CMake project uses `add_subdirectory(<path>/cpp-sdk)` and links `ebus_core`; the tests are then off.
+
+| Target | Contents | Depends on | Docs |
+|---|---|---|---|
+| `ebus_mqtt` | The MQTT transport interface (`MqttTransport`), the publishes held while the link is down (`PublishHold`), the reconnect order (`mqtt_after_connect()`) | nothing | [`doc/mqtt.md`](doc/mqtt.md) |
+| `ebus_core` | Everything: the Homie model, `/set` dispatch, the controller, validation, broker discovery, and `ebus_mqtt` | `ebus_mqtt`, ArduinoJson | [`doc/core.md`](doc/core.md) |
+
+`ebus_mqtt` builds with only its own include directory (`mqtt/include`), so a project can take it alone with `add_subdirectory(<path>/cpp-sdk/mqtt)`.
 
 ## Writing a port
 
@@ -60,16 +67,16 @@ A port binds four things, all documented in [`doc/core.md`](doc/core.md) ("What 
 
 | Piece | Header | What the port does |
 |---|---|---|
-| MQTT transport | `homie/homie_transport.h` | Subclasses `HomieTransport`: `publish()`, `subscribe()` and `queue_publish()` |
+| MQTT transport | `homie/homie_transport.h` | Subclasses `HomieTransport`, which is `ebus_mqtt`'s `MqttTransport` plus a Homie adapter: `publish()`, `subscribe()` and `queue_publish()` with a completion callback ([`doc/mqtt.md`](doc/mqtt.md)) |
 | Clock | `homie/homie_clock.h` | `homie_clock_bind(now_ms, sleep_ms)` |
 | Console | `homie/homie_log.h` | `homie_log_bind(vprintf_sink)`; optional, stdout otherwise |
 | Settable table | `homie/homie_settable.h` | Supplies storage to `settable_table_bind()`, routes each claimed `/set` message to `settable_dispatch()` on its own task, and subscribes every settable topic after each connect |
 
-The POSIX port is the reference: [`ports/posix/src/posix_port.cpp`](ports/posix/src/posix_port.cpp) binds the clock, console and settable table, and [`ports/posix/src/paho_transport.cpp`](ports/posix/src/paho_transport.cpp) is the transport. A port should also follow the rules for publishes made while the broker link is down, which the POSIX port takes from [ebus-mqtt-client](https://github.com/electrification-bus/ebus-mqtt-client).
+The POSIX port is the reference: [`ports/posix/src/posix_port.cpp`](ports/posix/src/posix_port.cpp) binds the clock, console and settable table, and [`ports/posix/src/paho_transport.cpp`](ports/posix/src/paho_transport.cpp) is the transport. A port should also follow the rules for publishes made while the broker link is down and the reconnect order, both from [ebus-mqtt-client](https://github.com/electrification-bus/ebus-mqtt-client); `ebus_mqtt` provides them as `PublishHold` and `mqtt_after_connect()`, which the POSIX port uses.
 
 ## Using the core from PlatformIO
 
-[`library.json`](library.json) makes this repository a PlatformIO library named `ebus_core` that compiles `include/` and `src/` and depends on ArduinoJson 7.4.3. Add it with a git URL:
+[`library.json`](library.json) makes this repository one PlatformIO library named `ebus_core` that compiles `src/` and `mqtt/src/`, puts `include/` and `mqtt/include/` on the include path, and depends on ArduinoJson 7.4.3. Add it with a git URL:
 
 ```ini
 lib_deps =
