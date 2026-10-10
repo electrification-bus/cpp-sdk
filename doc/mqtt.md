@@ -30,7 +30,7 @@ The Homie layer uses `HomieTransport` (`ebus/homie/homie_transport.h`), which de
 
 | Overrides | Ports |
 |---|---|
-| `queue_publish(..., qos, done, ctx)` | `PahoTransport` in `ports/posix/`; esp32-sdk's `MqttClientTransport` |
+| `queue_publish(..., qos, done, ctx)` | `PahoTransport` in `ports/posix/`; esp32-firmware's `MqttClientTransport` |
 | `queue_publish(..., Property* source)` | A port written against 0.1.0 |
 
 A `HomieTransport` that overrides neither refuses every queued publish, logs an error, and reports it to `done` as not sent.

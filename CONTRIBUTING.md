@@ -1,6 +1,6 @@
 # Contributing to cpp-sdk
 
-Thanks for your interest in contributing! `cpp-sdk` is a portable C++ core for eBus devices and controllers using the [Homie 5 MQTT convention](https://homieiot.github.io/), with a POSIX reference port. Platform ports supply the MQTT client, console and clock; [esp32-sdk](https://github.com/electrification-bus/esp32-sdk) is the ESP32 port.
+Thanks for your interest in contributing! `cpp-sdk` is a portable C++ core for eBus devices and controllers using the [Homie 5 MQTT convention](https://homieiot.github.io/), with a POSIX reference port. Platform ports supply the MQTT client, console and clock; [esp32-firmware](https://github.com/electrification-bus/esp32-firmware) is the ESP32 port.
 
 ## How to contribute
 
@@ -57,4 +57,4 @@ Be respectful and constructive. We appreciate everyone who takes the time to fil
 
 ## Maintenance posture
 
-`cpp-sdk` is an active alpha project. Updates and maintenance, including responses to issues filed on GitHub, will take place on an "as time and resources permit" basis. It is maintained alongside the rest of the eBus ecosystem, the [Electrification Bus specification](https://github.com/electrification-bus/specification), [`esp32-sdk`](https://github.com/electrification-bus/esp32-sdk), [`python-sdk`](https://github.com/electrification-bus/python-sdk), and [`ebus-mqtt-client`](https://github.com/electrification-bus/ebus-mqtt-client); see the specification repo's README §Governance for the project's long-term governance context.
+`cpp-sdk` is an active alpha project. Updates and maintenance, including responses to issues filed on GitHub, will take place on an "as time and resources permit" basis. It is maintained alongside the rest of the eBus ecosystem, the [Electrification Bus specification](https://github.com/electrification-bus/specification), [`esp32-firmware`](https://github.com/electrification-bus/esp32-firmware), [`python-sdk`](https://github.com/electrification-bus/python-sdk), and [`ebus-mqtt-client`](https://github.com/electrification-bus/ebus-mqtt-client); see the specification repo's README §Governance for the project's long-term governance context.

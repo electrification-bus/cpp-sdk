@@ -4,7 +4,7 @@
 // fits all of them: the property topic, its /set and $target forms, the publish queue
 // item and the settable table entry.
 //
-// esp32-sdk's ./ebus-esp32 generate reads the four base values and refuses a device.yml
+// esp32-firmware's ./ebus-esp32 generate reads the four base values and refuses a device.yml
 // whose ids or topics exceed them, so each must stay a plain integer literal on its own
 // #define line. It reads them from include/homie/homie_limits.h, which repeats them:
 // change both.

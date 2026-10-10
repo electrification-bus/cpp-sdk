@@ -5,7 +5,7 @@
 # ebus_link; every other suite links ebus_homie, which cannot reach ebus_discovery.
 
 # Unity 2.6.1, the release PlatformIO's `test_framework = unity` resolves to, so a suite
-# behaves the same under `pio test` in esp32-sdk and under CTest here. To build offline,
+# behaves the same under `pio test` in esp32-firmware and under CTest here. To build offline,
 # pass -DFETCHCONTENT_SOURCE_DIR_UNITY=<checkout>.
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)

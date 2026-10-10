@@ -2,7 +2,7 @@
 
 A link copies up to three property values into one settable property: a sensor reading onto a display, a state onto a relay, a reading from one device onto another device. Each link is one `EbusLink` (`ebus/link/link.h`), configured with strings, so a port can build links from a config file or command-line flags without code per link. The pure functions underneath (reference parsing, `*` matching, rounding, `%` substitution, retry backoff) are in `ebus/link/link_core.h`.
 
-The logic comes from Doug Mendonça's `logic/link` component in [esp32-sdk](https://github.com/electrification-bus/esp32-sdk).
+The logic comes from Doug Mendonça's `logic/link` component in [esp32-firmware](https://github.com/electrification-bus/esp32-firmware).
 
 ```cpp
 #include <ebus/link/link.h>

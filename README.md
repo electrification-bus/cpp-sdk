@@ -11,7 +11,7 @@ A portable C++17 core for devices and controllers on the [Electrification Bus](h
 
 | Target | Where | MQTT client |
 |---|---|---|
-| ESP32 (Arduino framework, PlatformIO) | [esp32-sdk](https://github.com/electrification-bus/esp32-sdk) | arduino-mqtt |
+| ESP32 (Arduino framework, PlatformIO) | [esp32-firmware](https://github.com/electrification-bus/esp32-firmware) | arduino-mqtt |
 | POSIX (Linux, macOS) | [`ports/posix/`](ports/posix/) in this repository | Eclipse Paho MQTT C |
 
 ## Status
@@ -19,9 +19,9 @@ A portable C++17 core for devices and controllers on the [Electrification Bus](h
 Version 0.7.0, alpha. Known limits:
 
 - The POSIX demo build has no TLS; it connects to plain-TCP brokers only.
-- The driver contract (`NodeEntity`, `NodeProperty`) is still in esp32-sdk ([why](doc/core.md#still-in-esp32-sdk)).
+- The driver contract (`NodeEntity`, `NodeProperty`) is still in esp32-firmware ([why](doc/core.md#still-in-esp32-firmware)).
 - The code-first API has rough edges found while writing the POSIX demo: registering a settable property needs a live connection, and the controller has no change callback.
-- esp32-sdk is not public yet; links to it will resolve once it is.
+- esp32-firmware is not public yet; links to it will resolve once it is.
 
 ## Quick start: the POSIX demo
 
@@ -92,7 +92,7 @@ build_unflags =
     -std=gnu++11
 ```
 
-The core needs C++17; `build_unflags` drops the gnu++11 default of arduino-esp32. It is compiled without the project's `build_src_flags`, so a macro it reads (`USE_EBUS_TOPIC`, `MAX_DATA_LEN`, `CONTROLLER_INBOX_BYTES`) goes in `build_flags`. esp32-sdk carries the same code in `lib/ebus_core/` until it moves to this dependency.
+The core needs C++17; `build_unflags` drops the gnu++11 default of arduino-esp32. It is compiled without the project's `build_src_flags`, so a macro it reads (`USE_EBUS_TOPIC`, `MAX_DATA_LEN`, `CONTROLLER_INBOX_BYTES`) goes in `build_flags`. esp32-firmware carries the same code in `lib/ebus_core/` until it moves to this dependency.
 
 ## License
 
@@ -100,7 +100,7 @@ The core needs C++17; `build_unflags` drops the gnu++11 default of arduino-esp32
 
 ## Authors
 
-Split out of [esp32-sdk](https://github.com/electrification-bus/esp32-sdk), with its history. Developed by:
+Split out of [esp32-firmware](https://github.com/electrification-bus/esp32-firmware), with its history. Developed by:
 
 - **Lead developer:** Doug Mendonça ([@nesl-admin](https://github.com/nesl-admin)), New Energy Solutions Lab, [doug@newenergysolutionslab.com](mailto:doug@newenergysolutionslab.com). Primary author of the firmware this code was split from, and a significant contributor to the eBus protocol and ecosystem more broadly.
 - **Project owner:** Donald Clark Jackson ([@dcj](https://github.com/dcj)), Clark Communications Corporation, [dcj@clark-communications.com](mailto:dcj@clark-communications.com). Project direction and documentation.

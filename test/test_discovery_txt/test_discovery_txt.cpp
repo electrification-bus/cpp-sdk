@@ -2,8 +2,8 @@
 // The TXT record builders (ebus/discovery/txt_records.h). Builds against ebus_discovery
 // alone. Each expected record lists its pairs in order. "Python" cases repeat a case from
 // ebus-service-discovery 0.5.0 (electrification-bus/python-service-discovery), so both
-// libraries build the same record from the same inputs; "esp32-sdk" cases repeat what
-// esp32-sdk's src/platform/network.cpp (mdns_register_services(), at 66abe5a) advertises.
+// libraries build the same record from the same inputs; "esp32-firmware" cases repeat what
+// esp32-firmware's src/platform/network.cpp (mdns_register_services(), at ab1f1fe) advertises.
 #include <unity.h>
 #include <ebus/discovery/txt_records.h>
 #include <ebus/discovery/mdns_strings.h>
@@ -131,9 +131,9 @@ static void test_python_rejects_unencodable(void) {
     TEST_ASSERT_EQUAL_UINT8(1, rec.count);
 }
 
-// --- esp32-sdk parity ----------------------------------------------------------------
+// --- esp32-firmware parity ----------------------------------------------------------------
 
-// What esp32-sdk passes: example device.yml values (doc/MDNS.md), the mdns_strings.h constants,
+// What esp32-firmware passes: example device.yml values (doc/MDNS.md), the mdns_strings.h constants,
 // HOMIE_TOPIC_DOMAIN "ebus" (-DUSE_EBUS_TOPIC) and HOMIE_VERSION_NUM "5".
 static EbusIdentity esp32_identity(void) {
     EbusIdentity id = {};

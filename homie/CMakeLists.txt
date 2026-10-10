@@ -32,7 +32,7 @@ target_compile_features(ebus_homie PUBLIC cxx_std_17)
 target_link_libraries(ebus_homie PUBLIC ebus_mqtt)
 
 # ArduinoJson (header-only). A parent project that already has an ArduinoJson target keeps
-# it. Otherwise the release PlatformIO uses (library.json, esp32-sdk's platformio.ini) is
+# it. Otherwise the release PlatformIO uses (library.json, esp32-firmware's platformio.ini) is
 # fetched, pinned by hash, so both builds serialize identically; to build offline, point
 # -DFETCHCONTENT_SOURCE_DIR_ARDUINOJSON=<dir> at a checkout of it.
 if(NOT TARGET ArduinoJson)
