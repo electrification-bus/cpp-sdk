@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-// ── UTF-8 cuts (util/utf8.h) ────────────────────────────────────────────────
+// ── UTF-8 cuts (ebus/link/utf8.h) ────────────────────────────────────────────────
 
 // "a°b€": a(1) °(2: C2 B0) b(1) €(3: E2 82 AC)
 static const char* const MIXED = "a\xC2\xB0" "b\xE2\x82\xAC";
