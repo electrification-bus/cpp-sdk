@@ -4,9 +4,11 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-10
+
 ### Changed
 
-- `Property::setValue(float)` publishes the shortest decimal that reads back as the same float, laid out like python-sdk's float text: `21.4`, `40.0`, `1e-05`, `1e16` instead of `21.400000`. The formatters are `homie_format_float()` and `homie_format_double()` in `ebus/homie/homie_datatype.h`.
+- `Property::setValue(float)` publishes the shortest decimal that reads back as the same float, laid out like python-sdk's float text: `21.4`, `40.0`, `1e-05`, `1e16` instead of `21.400000`. The formatters are `homie_format_float()` and `homie_format_double()` in `ebus/homie/homie_datatype.h`. ([#23](https://github.com/electrification-bus/cpp-sdk/pull/23))
 
 ## [0.6.0] - 2026-10-10
 
@@ -84,7 +86,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 - The core's Unity suites, built and run with CMake and CTest.
 - `library.json`, so a PlatformIO project can add the core with a `lib_deps` git URL.
 
-[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/electrification-bus/cpp-sdk/compare/v0.4.0...v0.4.1
