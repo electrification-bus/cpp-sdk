@@ -8,6 +8,7 @@
 #include <ebus/homie/jsonUtils.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>          // llround(): nearest-step rounding, not truncation
 
@@ -229,6 +230,18 @@ void Property::clearValue() {
     // must publish even if it happens to repeat the value that was there before.
     _last_pub_len = -1;
     if (_transport) _transport->publish(topic(), "", true, homie_qos(true));
+}
+
+void Property::store_received(const char* payload) {
+    snprintf(_value, sizeof(_value), "%s", payload);
+    _has_value = true;
+    if (strcmp(_datatype, HOMIE_DATATYPE_BOOLEAN) == 0) {
+        _boolValue = (strcmp(payload, "true") == 0 || strcmp(payload, "1") == 0);
+    } else if (strcmp(_datatype, HOMIE_DATATYPE_INTEGER) == 0) {
+        _intValue = strtoll(payload, nullptr, 10);
+    } else if (strcmp(_datatype, HOMIE_DATATYPE_FLOAT) == 0) {
+        _floatValue = strtof(payload, nullptr);
+    }
 }
 
 // Publish the intended target value to the property's $target topic (C5). Per spec,

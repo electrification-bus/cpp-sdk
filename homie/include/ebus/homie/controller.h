@@ -81,7 +81,9 @@ Device* controller_get_device(const char* device_id);
 // Get specific Node from a device
 Node* controller_get_node(const char* device_id, const char* node_id);
 
-// Get specific Property from a device
+// Get specific Property from a device. Its value() is the last payload received,
+// exactly as published; has_value() is false until one arrives and after the retained
+// value is removed (a zero-length payload), when value() still returns the last text.
 Property* controller_get_property(const char* device_id, const char* node_id,
                                   const char* property_id);
 
@@ -94,8 +96,16 @@ void controller_get_stats(ControllerStats* stats);
 // List all discovered Device objects (returns count)
 int controller_list_devices(Device** devices, int max_devices);
 
-// List all controller device wrappers (returns count)
+// List all controller device wrappers (returns count). Copies each entry; to walk the
+// table without the copy, use controller_device_count() and controller_device_at().
 int controller_list_device_info(ControllerDevice* devices, int max_devices);
+
+// Number of discovered devices, and the one at index (0 <= index < count), in the order
+// controller_list_device_info() lists them. The pointer is into the controller's table:
+// valid until controller_reset(), and current as messages are handled. nullptr when
+// index is out of range.
+int controller_device_count();
+const ControllerDevice* controller_device_at(int index);
 
 // Feed one MQTT message to the controller, from the client's receive callback. It only
 // copies the message into the inbox (the payload need not be NUL-terminated);

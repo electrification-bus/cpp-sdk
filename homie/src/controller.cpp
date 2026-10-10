@@ -54,11 +54,11 @@ static void handle_state_message(const char* domain, const char* device_id, cons
 static void handle_description_message(const char* domain, const char* device_id, const char* payload);
 static void handle_property_message(const char* domain, const char* device_id,
                                    const char* node_id, const char* property_id,
-                                   const char* payload);
+                                   const char* payload, size_t length);
 static int find_device_index(const char* device_id);
 static int find_or_create_device(const char* device_id);
 static void create_device_from_description(ControllerDevice* ctrl_dev, JsonDocument& doc);
-static void handle_message(const char* topic, const char* payload);
+static void handle_message(const char* topic, const char* payload, size_t length);
 static void run_subscriptions();
 
 // Initialize the controller
@@ -89,8 +89,9 @@ void controller_loop() {
     // meanwhile and the inbox is empty afterwards.
     const char* topic;
     const char* payload;
-    while (_inbox.front(&topic, &payload, nullptr)) {
-        handle_message(topic, payload);
+    size_t length;
+    while (_inbox.front(&topic, &payload, &length)) {
+        handle_message(topic, payload, length);
         _inbox.pop();
     }
     run_subscriptions();
@@ -229,6 +230,18 @@ int controller_list_device_info(ControllerDevice* devices, int max_devices) {
     return count;
 }
 
+int controller_device_count() {
+    return _device_count;
+}
+
+const ControllerDevice* controller_device_at(int index) {
+    if (index < 0) return nullptr;
+    for (int i = 0; i < MAX_DISCOVERED_DEVICES; i++) {
+        if (_devices[i].is_active && index-- == 0) return &_devices[i];
+    }
+    return nullptr;
+}
+
 // A message the inbox could not hold: count it, and re-subscribe the topics it came from
 // once the inbox has drained, so the broker resends the retained copy. Runs inside the
 // receive callback, so it only reads the device table and sets flags.
@@ -259,7 +272,7 @@ void controller_mqtt_callback(char* topic, uint8_t* payload, unsigned int length
 }
 
 // Handle one queued message. No client calls: see the note on _inbox.
-static void handle_message(const char* topic, const char* payload) {
+static void handle_message(const char* topic, const char* payload, size_t length) {
     ControllerTopic t;
     if (!controller_parse_topic(topic, &t)) {
         return; // Not a Homie topic we care about, or an id over its homie_limits.h maximum
@@ -273,7 +286,7 @@ static void handle_message(const char* topic, const char* payload) {
     } else if (t.kind == CONTROLLER_TOPIC_DESCRIPTION) {
         handle_description_message(t.domain, t.device_id, payload);
     } else {
-        handle_property_message(t.domain, t.device_id, t.node_id, t.property_id, payload);
+        handle_property_message(t.domain, t.device_id, t.node_id, t.property_id, payload, length);
     }
 }
 
@@ -516,7 +529,7 @@ static void handle_description_message(const char* domain, const char* device_id
 
 static void handle_property_message(const char* domain, const char* device_id,
                                    const char* node_id, const char* property_id,
-                                   const char* payload) {
+                                   const char* payload, size_t length) {
     (void)domain;   // the property is looked up by device id alone
     // Get the property object
     Property* prop = controller_get_property(device_id, node_id, property_id);
@@ -526,18 +539,26 @@ static void handle_property_message(const char* domain, const char* device_id,
         return;
     }
 
-    // Update property value based on datatype
-    const char* datatype = prop->datatype();
-    if (strcmp(datatype, HOMIE_DATATYPE_BOOLEAN) == 0) {
-        bool val = (strcmp(payload, "true") == 0 || strcmp(payload, "1") == 0);
-        prop->setValue(val);
-    } else if (strcmp(datatype, HOMIE_DATATYPE_INTEGER) == 0) {
-        prop->setValue(atoi(payload));
-    } else if (strcmp(datatype, HOMIE_DATATYPE_FLOAT) == 0) {
-        prop->setValue((float)atof(payload));
-    } else {
-        prop->setValue(payload);
+    // A zero-length payload removes the retained value (Homie 5): the property has no
+    // value now. value() keeps the last text, for a consumer that wants the last good one.
+    if (length == 0) {
+        prop->forget_value();
+        homie_logf("CONTROLLER: Property %s/%s/%s value retracted\n",
+                     device_id, node_id, property_id);
+        return;
     }
+    // A single 0x00 byte is Homie 5's empty string. Any other datatype has no empty
+    // value, so the payload is ignored there rather than parsed as false or 0.
+    if (length == 1 && payload[0] == '\0' &&
+        strcmp(prop->datatype(), HOMIE_DATATYPE_STRING) != 0) {
+        homie_logf("CONTROLLER: Property %s/%s/%s (%s) empty value ignored\n",
+                     device_id, node_id, property_id, prop->datatype());
+        return;
+    }
+
+    // Kept as published: value() returns the payload text, and the typed accessors
+    // parse it, so a float reads back as "21.37" rather than reformatted.
+    prop->store_received(payload);
 
     homie_logf("CONTROLLER: Property %s/%s/%s = %s\n",
                  device_id, node_id, property_id, payload);

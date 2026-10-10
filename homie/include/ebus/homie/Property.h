@@ -40,6 +40,9 @@ public:
     void setValue(bool value);
     void setValue(unsigned int value);
     const char* value() { return _value; };
+    // False until a value is set or received, and again after clearValue() or
+    // forget_value(); value() then still returns the last text.
+    bool has_value() const { return _has_value; }
     float getFloatValue() { return _floatValue; };
     // No float round-trip: that lost precision above 2^24, so getIntValue() could not
     // return what setValue() stored (16777217 came back as 16777216).
@@ -85,6 +88,11 @@ public:
     bool publish_queued(bool force = false);
 
     void clearValue();   // mark unavailable — retract retained topic, no sentinel
+    // The controller's copy of a remote property. store_received() keeps the payload as
+    // published in value() and parses the typed fields from it; forget_value() marks the
+    // value absent without publishing anything (the broker no longer holds one).
+    void store_received(const char* payload);
+    void forget_value() { _has_value = false; }
     // The /set path, in the order dispatch_settable() runs it: store_set_payload()
     // validates and stores; the driver, if any, accepts or refuses; publish_set() reports
     // an accepted value, and restore_value() undoes a refused one.
