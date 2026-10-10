@@ -1,18 +1,19 @@
 # Builds the core without PlatformIO, for Zephyr, embedded Linux, or a host check.
 # Usage from a parent project: add_subdirectory(path/to/cpp-sdk) and link ebus_core, the
-# umbrella, or one component target (ebus_mqtt, ebus_discovery, ebus_homie).
+# umbrella, or one component target (ebus_mqtt, ebus_discovery, ebus_homie, ebus_link).
 cmake_minimum_required(VERSION 3.18)
 project(ebus_core LANGUAGES CXX)
 
 add_subdirectory(mqtt)
 add_subdirectory(discovery)
 add_subdirectory(homie)
+add_subdirectory(link)
 
-# The umbrella: the three components, plus include/, which holds the headers at the paths
+# The umbrella: the four components, plus include/, which holds the headers at the paths
 # they had before the split (each forwards to its component).
 add_library(ebus_core INTERFACE)
 target_include_directories(ebus_core INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(ebus_core INTERFACE ebus_mqtt ebus_discovery ebus_homie)
+target_link_libraries(ebus_core INTERFACE ebus_mqtt ebus_discovery ebus_homie ebus_link)
 
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     set(_ebus_core_top_level ON)
@@ -24,6 +25,7 @@ if(_ebus_core_top_level AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(ebus_mqtt PRIVATE -Wall -Wextra)
     target_compile_options(ebus_discovery PRIVATE -Wall -Wextra)
     target_compile_options(ebus_homie PRIVATE -Wall -Wextra)
+    target_compile_options(ebus_link PRIVATE -Wall -Wextra)
 endif()
 
 # Compiles every public header in a translation unit of its own, so a header that needs
@@ -49,6 +51,7 @@ if(EBUS_CORE_CHECK_HEADERS)
     ebus_header_check(ebus_mqtt ${CMAKE_CURRENT_SOURCE_DIR}/mqtt/include)
     ebus_header_check(ebus_discovery ${CMAKE_CURRENT_SOURCE_DIR}/discovery/include)
     ebus_header_check(ebus_homie ${CMAKE_CURRENT_SOURCE_DIR}/homie/include)
+    ebus_header_check(ebus_link ${CMAKE_CURRENT_SOURCE_DIR}/link/include)
     ebus_header_check(ebus_core ${CMAKE_CURRENT_SOURCE_DIR}/include)
 endif()
 
