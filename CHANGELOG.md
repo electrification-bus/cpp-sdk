@@ -4,6 +4,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-10
+
 ### Added
 
 - `Property::has_value()`, and for the controller's copy of a remote property `Property::store_received()` and `Property::forget_value()` ([doc/core.md](doc/core.md#controller-values)).
@@ -64,7 +66,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 - The core's Unity suites, built and run with CMake and CTest.
 - `library.json`, so a PlatformIO project can add the core with a `lib_deps` git URL.
 
-[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/electrification-bus/cpp-sdk/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.1.0...v0.2.0
