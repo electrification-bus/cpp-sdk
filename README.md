@@ -21,7 +21,7 @@ Version 0.6.0, alpha. Known limits:
 - The POSIX demo build has no TLS; it connects to plain-TCP brokers only.
 - After a broker loses its retained messages, esp32-sdk's reconnect does not restore `$description`; it does not yet call `Device::forgetDescriptionHash()` ([After a reconnect](doc/core.md#after-a-reconnect)).
 - The driver contract (`NodeEntity`, `NodeProperty`) is still in esp32-sdk ([why](doc/core.md#still-in-esp32-sdk)).
-- The code-first API has rough edges found while writing the POSIX demo: registering a settable property needs a live connection, the controller has no change callback, and float values are always formatted with `%f`.
+- The code-first API has rough edges found while writing the POSIX demo: registering a settable property needs a live connection, and the controller has no change callback.
 - esp32-sdk is not public yet; links to it will resolve once it is.
 
 ## Quick start: the POSIX demo

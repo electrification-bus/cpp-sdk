@@ -129,7 +129,7 @@ static void test_target_is_published_first_with_the_exact_payload(void) {
     TEST_ASSERT_EQUAL_STRING("40.2", t.at(0).payload);
     TEST_ASSERT_TRUE(t.at(0).retained);
     TEST_ASSERT_EQUAL_STRING(p->topic(), t.at(1).topic);
-    TEST_ASSERT_EQUAL_STRING("40.000000", t.at(1).payload);   // stepped and coerced
+    TEST_ASSERT_EQUAL_STRING("40.0", t.at(1).payload);   // stepped and coerced
 }
 
 static void test_refused_set_restores_the_value_and_publishes_nothing(void) {

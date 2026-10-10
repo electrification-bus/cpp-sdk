@@ -91,3 +91,13 @@ bool homie_parse_number_format(const char* format, HomieNumberFormat* out);
 // nothing in tree needs one, since a stepped format on a counter that large is not a
 // configuration anyone writes.
 bool homie_validate_number(double value, const char* format, double* coerced);
+
+// Format a float payload: the shortest decimal that reads back as the same float, laid
+// out like Python's repr() without the exponent '+' (fixed notation with at least one
+// fraction digit for exponents -4..15, else d.ddde-XX), so "21.4", "40.0", "1e-05",
+// "1e16". This is python-sdk's float text. Writes NUL-terminated text to out (n >= 32);
+// a non-finite value is written as "nan", "inf" or "-inf", which is not a valid payload.
+void homie_format_float(float value, char* out, size_t n);
+
+// The same for a double: the shortest decimal that reads back as the same double.
+void homie_format_double(double value, char* out, size_t n);
