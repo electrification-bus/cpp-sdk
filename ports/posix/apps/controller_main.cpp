@@ -159,6 +159,7 @@ int main(int argc, char** argv) {
 
     ebus_posix_port_init(&transport, broker.quiet);
     controller_init(&transport, broker.domain, false);
+    ebus_link_enable_controller();
     if (!setup_links(links, EbusLink::CONTROLLER, nullptr)) return 2;
 
     char client_id[HOMIE_DEVICE_ID_MAX + 1];

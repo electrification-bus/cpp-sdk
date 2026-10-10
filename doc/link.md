@@ -16,6 +16,7 @@ climate.loop();                           // every pass of the main loop
 // In a controller: whichever discovered device has the reading, onto another device.
 static EbusLink pressure("pressure-to-display", "*/environment-*/air-pressure",
                          "a4cf12e8d0b4/display/line-two", "%s", 0);
+ebus_link_enable_controller();            // once, before the first controller link
 pressure.setup(EbusLink::CONTROLLER);     // after controller_init()
 pressure.loop();                          // after controller_loop()
 ```
@@ -37,11 +38,11 @@ The strings are not copied: they must outlive the link. `setup()` returns false,
 
 ### Mode
 
-The mode is an argument to `setup()`, so one library build serves devices and controllers, and a test can run both in one process.
+The mode is an argument to `setup()`, so one library build serves devices and controllers, and a test can run both in one process. Controller mode is available only after `ebus_link_enable_controller()`; until then `setup(EbusLink::CONTROLLER)` logs and returns false. The controller-mode code is in `link/src/link_controller.cpp`, which defines that function and is the only part of `ebus_link` that references the controller, so a device that never calls it does not link the controller or its discovery table (about 2.5 KB of RAM on an ESP32). The linker drops them when `ebus_link` is linked as an archive, as CMake's static `ebus_link` is, or when objects are linked with `-ffunction-sections -fdata-sections` and `--gc-sections`, as in the ESP32 Arduino build.
 
 | | `EbusLink::DEVICE` | `EbusLink::CONTROLLER` |
 |---|---|---|
-| `setup()` needs | the root `Device` | `controller_init()` before `loop()` |
+| `setup()` needs | the root `Device` | `ebus_link_enable_controller()` first, and `controller_init()` before `loop()` |
 | Ends | local or remote | remote only: a controller has no nodes |
 | Local source | read from the root device every `interval_ms` | |
 | Remote source | watched on the broker through the settable table (one subscription per topic) | read from the controller's discovery cache every `interval_ms`; no subscription of its own |
@@ -113,6 +114,7 @@ Give each link its own target: two links writing one target overwrite each other
 |---|---|
 | `bad source list '...'` / `bad target '...'` | Not `a/b` or `a/b/c`, an empty part, a part over its limit, a malformed pattern, `*` in the property, more than 3 sources, or a two-part reference in a controller link. The link is disabled. |
 | `... uses *, which needs the controller's discovery` | `*` in a device link. The link is disabled. |
+| `a controller link needs ebus_link_enable_controller() first` | `setup(EbusLink::CONTROLLER)` before the opt-in. The link is disabled. |
 | `target topic for ... is over 127 chars` / `source %N topic is over 127 chars` | The topic does not fit `HOMIE_TOPIC_MAX`. The link is disabled. |
 | `source %N ... is already watched by another link source` | Device mode: two link sources name the same remote property. The link is disabled. |
 | `source %N ... could not be registered` | Device mode: the settable table is full. The link is disabled. |

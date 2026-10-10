@@ -1,6 +1,7 @@
 // Host-side tests for EbusLink (link/src/link.cpp) through a FakeTransport, a fake clock and
 // the real settable table and controller: device-mode local and remote ends, controller
-// links binding * against the discovery cache, retraction, change detection and backoff.
+// links binding * against the discovery cache, the controller opt-in, retraction, change
+// detection and backoff.
 #include <unity.h>
 #include <ebus/homie/Device.h>
 #include <ebus/homie/Node.h>
@@ -275,9 +276,21 @@ static void value(const char* id, const char* node, const char* prop, const char
     controller_loop();
 }
 
+// Every controller test runs after test_controller_mode_needs_the_opt_in, which needs the
+// opt-in not to have been called yet.
 static void start_discovery(void) {
+    ebus_link_enable_controller();
     controller_setup_discovery();
     controller_loop();
+}
+
+static void test_controller_mode_needs_the_opt_in(void) {
+    EbusLink l("c", "s/env/temp", "d/display/line");
+    TEST_ASSERT_FALSE(l.setup(EbusLink::CONTROLLER));
+    TEST_ASSERT_FALSE(l.enabled());
+    TEST_ASSERT_NOT_NULL(strstr(g_log.last, "needs ebus_link_enable_controller() first"));
+    ebus_link_enable_controller();
+    TEST_ASSERT_TRUE(l.setup(EbusLink::CONTROLLER));
 }
 
 static void test_controller_link_binds_patterns_once_discovery_settles(void) {
@@ -414,6 +427,7 @@ static void test_controller_holds_until_ready_and_resends_on_return(void) {
 }
 
 static void test_controller_links_name_a_device_at_both_ends(void) {
+    ebus_link_enable_controller();
     EbusLink a("a", "env/temp", "d/display/line");
     TEST_ASSERT_FALSE(a.setup(EbusLink::CONTROLLER));
     TEST_ASSERT_NOT_NULL(strstr(g_log.last, "(controller link)"));
@@ -437,6 +451,7 @@ int main(int, char**) {
     RUN_TEST(test_full_settable_table_disables_the_link);
     RUN_TEST(test_device_mode_refuses_patterns_and_bad_references);
     RUN_TEST(test_missing_local_source_is_reported_once);
+    RUN_TEST(test_controller_mode_needs_the_opt_in);   // first: before any opt-in
     RUN_TEST(test_controller_link_binds_patterns_once_discovery_settles);
     RUN_TEST(test_controller_pattern_matching_two_nodes_is_refused);
     RUN_TEST(test_controller_target_pattern_needs_a_settable_property);
