@@ -88,7 +88,7 @@ if(EBUS_POSIX_TESTS)
     target_link_libraries(ebus_posix_e2e PRIVATE ebus_posix ${_paho_target})
     ebus_posix_warnings(ebus_posix_e2e)
     if(EBUS_POSIX_MOSQUITTO)
-        foreach(_case boot set invalid will reconnect controller)
+        foreach(_case boot set invalid will reconnect controller link link_device)
             add_test(NAME e2e_${_case}
                      COMMAND ebus_posix_e2e ${_case}
                              --mosquitto ${EBUS_POSIX_MOSQUITTO}

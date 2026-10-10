@@ -4,6 +4,12 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+### Added
+
+- `ebus_link`, a CMake target over `ebus_homie` (`link/`, [doc/link.md](doc/link.md)): `EbusLink` copies up to three property values, local or remote, into a settable property, with a format, rounding, change detection, retry backoff, and the last good value kept on a retraction. In a device (`EbusLink::DEVICE`) it reads the root `Device`'s properties, watches remote ones through the settable table and sets a local target with `deliver_local_set()`; in a controller (`EbusLink::CONTROLLER`) it reads the discovery cache, binds `*` in the device or node part once discovery has settled, refuses an ambiguous match, and commands the target only while it is `ready`. The logic comes from esp32-sdk's `logic/link`, by Doug Mendonça. `ebus_core` links it, PlatformIO builds `link/src/`, and a CI step compiles it with only its own and `ebus_homie`'s include directories.
+- Unity suites `test_link_core` and `test_link_engine`, which link `ebus_link`.
+- `--link SOURCES=>TARGET` (with `--link-format`, `--link-decimals`, `--link-interval-ms`) for `ebus-posix-device` and `ebus-posix-controller`, and the end-to-end tests `e2e_link` and `e2e_link_device`.
+
 ## [0.4.1] - 2026-10-10
 
 ### Added

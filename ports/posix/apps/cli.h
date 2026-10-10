@@ -1,8 +1,12 @@
 #pragma once
 // Command-line flags the two demo programs share.
+#include <ebus/link/link.h>
+#include <memory>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
+#include <vector>
 
 struct BrokerArgs {
     const char* host = "localhost";
@@ -60,4 +64,71 @@ inline void broker_args_finish(BrokerArgs* b) {
         fprintf(stderr, "--port must be 1-65535\n");
         exit(2);
     }
+}
+
+// --link SOURCES=>TARGET, repeatable, and the options that apply to the --link before them.
+// Each becomes one EbusLink (ebus/link/link.h, doc/link.md).
+struct LinkArg {
+    std::string id, source, target, format = "%s";
+    int decimals = -1;
+    unsigned interval_ms = 1000;
+    std::unique_ptr<EbusLink> link;
+};
+
+static const char LINK_USAGE[] =
+    "  --link SRC=>TARGET   copy up to 3 comma-separated SRC properties into TARGET (repeatable;\n"
+    "                       see doc/link.md)\n"
+    "  --link-format FMT    text for the last --link: %1..%3, %s, %% (default %s)\n"
+    "  --link-decimals N    round numeric values for the last --link (default -1, as is)\n"
+    "  --link-interval-ms MS  poll interval for the last --link (default 1000)\n";
+
+// Consumes argv[*i] (and its value) if it is a link flag; returns whether it was. Exits on
+// a malformed one.
+inline bool parse_link_flag(int argc, char** argv, int* i,
+                            std::vector<std::unique_ptr<LinkArg>>* links) {
+    const char* v;
+    if ((v = flag_value(argc, argv, i, "--link"))) {
+        const char* arrow = strstr(v, "=>");
+        if (!arrow || arrow == v || !arrow[2]) {
+            fprintf(stderr, "--link wants SOURCES=>TARGET, got '%s'\n", v);
+            exit(2);
+        }
+        std::unique_ptr<LinkArg> l(new LinkArg());
+        l->source.assign(v, (size_t)(arrow - v));
+        l->target = arrow + 2;
+        l->id = "link-" + std::to_string(links->size() + 1);
+        links->push_back(std::move(l));
+        return true;
+    }
+    bool fmt = false, dec = false, ivl = false;
+    if ((v = flag_value(argc, argv, i, "--link-format"))) fmt = true;
+    else if ((v = flag_value(argc, argv, i, "--link-decimals"))) dec = true;
+    else if ((v = flag_value(argc, argv, i, "--link-interval-ms"))) ivl = true;
+    else return false;
+    if (links->empty()) {
+        fprintf(stderr, "--link-format, --link-decimals and --link-interval-ms apply to the "
+                        "--link before them, and there is none\n");
+        exit(2);
+    }
+    LinkArg& l = *links->back();
+    if (fmt) l.format = v;
+    if (dec) l.decimals = atoi(v);
+    if (ivl) l.interval_ms = (unsigned)atoi(v);
+    return true;
+}
+
+// Set up every link; returns false if one is disabled (the core logged why).
+inline bool setup_links(std::vector<std::unique_ptr<LinkArg>>& links, EbusLink::Mode mode,
+                        Device* root) {
+    bool ok = true;
+    for (auto& l : links) {
+        l->link.reset(new EbusLink(l->id.c_str(), l->source.c_str(), l->target.c_str(),
+                                   l->format.c_str(), l->decimals, l->interval_ms));
+        if (!l->link->setup(mode, root)) {
+            fprintf(stderr, "%s (%s=>%s) is disabled\n", l->id.c_str(), l->source.c_str(),
+                    l->target.c_str());
+            ok = false;
+        }
+    }
+    return ok;
 }

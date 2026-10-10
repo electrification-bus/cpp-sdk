@@ -1,6 +1,6 @@
 # POSIX port
 
-The eBus core ([`doc/core.md`](../../doc/core.md)) on Linux and macOS: a `HomieTransport` over the Eclipse Paho MQTT C client, the clock and log bindings, a demo device, a demo controller, and end-to-end tests against a real mosquitto. CMake only; PlatformIO never builds this directory, because the root `library.json` limits a PlatformIO build to `mqtt/src/`, `discovery/src/` and `homie/src/`.
+The eBus core ([`doc/core.md`](../../doc/core.md)) on Linux and macOS: a `HomieTransport` over the Eclipse Paho MQTT C client, the clock and log bindings, a demo device, a demo controller, and end-to-end tests against a real mosquitto. CMake only; PlatformIO never builds this directory, because the root `library.json` limits a PlatformIO build to `mqtt/src/`, `discovery/src/`, `homie/src/` and `link/src/`.
 
 | Path | Contents |
 |---|---|
@@ -30,7 +30,7 @@ ports/posix/build/ebus-posix-controller --host <broker>
 ports/posix/build/ebus-posix-controller --host <broker> --set posix-demo/switch/on=true --duration-s 5
 ```
 
-Both take `--host`, `--port` (1883), `--user`, `--password` (or `EBUS_MQTT_PASSWORD`, which stays out of `ps`), `--domain` (`ebus`), `--reconnect-ms` (2000) and `--quiet`. The device adds `--device-id` and `--period-ms` (temperature update period); the controller adds `--set DEVICE/NODE/PROPERTY=VALUE` and `--duration-s`. Plain TCP only: Paho is built without TLS.
+Both take `--host`, `--port` (1883), `--user`, `--password` (or `EBUS_MQTT_PASSWORD`, which stays out of `ps`), `--domain` (`ebus`), `--reconnect-ms` (2000) and `--quiet`. The device adds `--device-id` and `--period-ms` (temperature update period); the controller adds `--set DEVICE/NODE/PROPERTY=VALUE` and `--duration-s`. Both take `--link SOURCES=>TARGET`, repeatable, each followed by optional `--link-format`, `--link-decimals` and `--link-interval-ms`: a property link in the device or in the controller ([`doc/link.md`](../../doc/link.md#in-the-posix-port)). Plain TCP only: Paho is built without TLS.
 
 The device publishes `<domain>/5/<id>` with `switch/on` (boolean, settable) and `sensor/temperature` (float, a simulated reading), and a child device `<id>-child` with `status/uptime`, which a worker thread publishes through `queue_publish()`. Ctrl-C sets `$state` to `disconnected` and disconnects cleanly; a kill leaves the broker to publish the will, `lost`. The controller prints one line per change on stdout (`state`, `device`, `property`, `set`) and the core's log on stderr.
 

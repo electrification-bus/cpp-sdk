@@ -8,6 +8,8 @@
 //   set <device>/<node>/<property> = <value>
 //
 // --set DEVICE/NODE/PROPERTY=VALUE sends one /set once that property is discovered.
+// --link SOURCES=>TARGET runs a controller link (doc/link.md): other devices' properties,
+// '*' allowed in the device and node, into another device's settable property.
 #include <ebus_posix/paho_transport.h>
 #include <ebus_posix/posix_port.h>
 #include <ebus/homie/controller.h>
@@ -118,8 +120,9 @@ static void usage(const char* argv0) {
             "%s"
             "  --set D/N/P=VALUE    send VALUE to device D, node N, property P once it is "
             "discovered\n"
-            "  --duration-s S       exit after S seconds (default: run until interrupted)\n",
-            argv0, BROKER_USAGE);
+            "  --duration-s S       exit after S seconds (default: run until interrupted)\n"
+            "%s",
+            argv0, BROKER_USAGE, LINK_USAGE);
 }
 
 int main(int argc, char** argv) {
@@ -127,9 +130,11 @@ int main(int argc, char** argv) {
     PendingSet pending;
     bool have_set = false;
     unsigned duration_s = 0;
+    std::vector<std::unique_ptr<LinkArg>> links;
     for (int i = 1; i < argc; i++) {
         const char* v;
         if (parse_broker_flag(argc, argv, &i, &broker)) continue;
+        if (parse_link_flag(argc, argv, &i, &links)) continue;
         if ((v = flag_value(argc, argv, &i, "--set"))) {
             if (!parse_set(v, &pending)) {
                 fprintf(stderr, "--set wants DEVICE/NODE/PROPERTY=VALUE, got '%s'\n", v);
@@ -154,6 +159,7 @@ int main(int argc, char** argv) {
 
     ebus_posix_port_init(&transport, broker.quiet);
     controller_init(&transport, broker.domain, false);
+    if (!setup_links(links, EbusLink::CONTROLLER, nullptr)) return 2;
 
     char client_id[HOMIE_DEVICE_ID_MAX + 1];
     snprintf(client_id, sizeof(client_id), "ebus-posix-controller-%ld", (long)getpid());
@@ -176,6 +182,7 @@ int main(int argc, char** argv) {
     while (running.load()) {
         transport.loop();
         controller_loop();
+        for (auto& l : links) l->link->loop();
         uint32_t now = homie_now_ms();
         if ((int32_t)(now - next_report) < 0) {
             homie_sleep_ms(10);

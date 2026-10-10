@@ -1,7 +1,7 @@
 {
   "name": "ebus_core",
   "version": "0.4.1",
-  "description": "Portable eBus / Homie 5 core: the Device, Node and Property model, /set dispatch, the controller, id and payload validation, broker discovery. Depends on the C/C++ standard library and ArduinoJson; a port supplies the MQTT transport, log and clock. See doc/core.md.",
+  "description": "Portable eBus / Homie 5 core: the Device, Node and Property model, /set dispatch, the controller, id and payload validation, broker discovery, property links. Depends on the C/C++ standard library and ArduinoJson; a port supplies the MQTT transport, log and clock. See doc/core.md.",
   "keywords": "homie, mqtt, ebus, iot",
   "repository": {
     "type": "git",
@@ -23,12 +23,14 @@
     "srcFilter": [
       "+<mqtt/src/>",
       "+<discovery/src/>",
-      "+<homie/src/>"
+      "+<homie/src/>",
+      "+<link/src/>"
     ],
     "flags": [
       "-I mqtt/include",
       "-I discovery/include",
-      "-I homie/include"
+      "-I homie/include",
+      "-I link/include"
     ]
   }
 }
