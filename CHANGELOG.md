@@ -4,6 +4,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-10-10
+
 ### Fixed
 
 - `Property::setValue(float)` published `nan`, `inf` or `-inf`, which the float payload grammar does not allow. `homie_format_float()` and `homie_format_double()` now return `false` with an empty string for a NaN or infinity, and `setValue()` logs and keeps the previous value. ([#27](https://github.com/electrification-bus/cpp-sdk/issues/27))
@@ -94,7 +96,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 - The core's Unity suites, built and run with CMake and CTest.
 - `library.json`, so a PlatformIO project can add the core with a `lib_deps` git URL.
 
-[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/electrification-bus/cpp-sdk/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.4.1...v0.5.0
