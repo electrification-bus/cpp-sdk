@@ -4,6 +4,7 @@
 #include <ebus/link/link_core.h>
 #include <ebus/link/utf8.h>
 
+#include <stdio.h>
 #include <string.h>
 
 // ── UTF-8 cuts (util/utf8.h) ────────────────────────────────────────────────
