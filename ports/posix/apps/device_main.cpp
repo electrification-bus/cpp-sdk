@@ -7,6 +7,9 @@
 //   <id>-child           child device
 //     status/uptime      integer seconds, published from a worker thread
 //
+// --link SOURCES=>TARGET runs a property link in the device (doc/link.md): a local
+// <node>/<property> or another device's <device-id>/<node>/<property> into a settable one.
+//
 // The tree is built before the first connect. Each connect flushes what was held while
 // the link was down and re-subscribes the /set topics (PahoTransport), then publishes the
 // whole tree; a reconnect sends every $description again (see on_connected()).
@@ -92,17 +95,20 @@ static void usage(const char* argv0) {
             "usage: %s [options]\n"
             "%s"
             "  --device-id ID       root device id (default posix-demo)\n"
-            "  --period-ms MS       temperature update period (default 2000)\n",
-            argv0, BROKER_USAGE);
+            "  --period-ms MS       temperature update period (default 2000)\n"
+            "%s",
+            argv0, BROKER_USAGE, LINK_USAGE);
 }
 
 int main(int argc, char** argv) {
     BrokerArgs broker;
     const char* device_id = "posix-demo";
     unsigned period_ms = 2000;
+    std::vector<std::unique_ptr<LinkArg>> links;
     for (int i = 1; i < argc; i++) {
         const char* v;
         if (parse_broker_flag(argc, argv, &i, &broker)) continue;
+        if (parse_link_flag(argc, argv, &i, &links)) continue;
         if ((v = flag_value(argc, argv, &i, "--device-id"))) { device_id = v; continue; }
         if ((v = flag_value(argc, argv, &i, "--period-ms"))) {
             period_ms = (unsigned)atoi(v);
@@ -148,6 +154,7 @@ int main(int argc, char** argv) {
     root.addChild(&child);
 
     ebus_posix_register_settable(&switch_on, on_switch_set, nullptr);
+    if (!setup_links(links, EbusLink::DEVICE, &root)) return 2;
 
     char will_topic[HOMIE_TOPIC_MAX + 1];
     snprintf(will_topic, sizeof(will_topic), "%s%s", root.topic(), HOMIE_$STATE);
@@ -176,6 +183,7 @@ int main(int argc, char** argv) {
             temperature.setValue((float)(21.0 + 3.0 * sin(now / 10000.0)));
             temperature.publish_value();
         }
+        for (auto& l : links) l->link->loop();
         homie_sleep_ms(10);
     }
 

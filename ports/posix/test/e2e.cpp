@@ -4,7 +4,7 @@
 //
 //   ebus_posix_e2e <case> --mosquitto PATH --device PATH --controller PATH --workdir DIR
 //
-// Cases: boot, set, invalid, will, reconnect, controller.
+// Cases: boot, set, invalid, will, reconnect, controller, link, link_device.
 #include <MQTTClient.h>
 #include <arpa/inet.h>
 #include <errno.h>
@@ -143,10 +143,12 @@ struct Broker {
     void stop_broker() { stop(pid, SIGTERM); }
 };
 
-static pid_t start_device(int port) {
-    return spawn({g_device, "--host", "127.0.0.1", "--port", std::to_string(port), "--device-id", DEVICE_ID,
-                  "--period-ms", "500", "--reconnect-ms", "300"},
-                 g_dir + "/device.log");
+static pid_t start_device(int port, const char* id = DEVICE_ID, const char* log = "device.log",
+                          const std::vector<std::string>& extra = {}) {
+    std::vector<std::string> args = {g_device, "--host", "127.0.0.1", "--port", std::to_string(port),
+                                     "--device-id", id, "--period-ms", "500", "--reconnect-ms", "300"};
+    args.insert(args.end(), extra.begin(), extra.end());
+    return spawn(args, g_dir + "/" + log);
 }
 
 // ---- a recording MQTT client ---------------------------------------------------------
@@ -176,12 +178,12 @@ class Recorder {
         MQTTClient_destroy(&_c);
     }
 
-    void publish(const std::string& topic, const std::string& payload) {
+    void publish(const std::string& topic, const std::string& payload, bool retained = false) {
         MQTTClient_message m = MQTTClient_message_initializer;
         m.payload = (void*)payload.data();
         m.payloadlen = (int)payload.size();
-        m.qos = 0;
-        m.retained = 0;
+        m.qos = retained ? 1 : 0;
+        m.retained = retained ? 1 : 0;
         int rc = MQTTClient_publishMessage(_c, topic.c_str(), &m, nullptr);
         REQUIRE(rc == MQTTCLIENT_SUCCESS, "publish %s: %d", topic.c_str(), rc);
     }
@@ -438,6 +440,99 @@ static void case_controller() {
            "temperature changes\n", temps);
 }
 
+static const char* DEVICE2_ID = "e2e-dev2";
+static const std::string ROOT2_T = std::string("ebus/5/") + DEVICE2_ID + "/";
+
+// No message on `topic` in the recorder from `from` on.
+static bool none_since(Recorder& rec, const std::string& topic, size_t from) {
+    std::vector<Msg> msgs = rec.snapshot();
+    for (size_t k = from; k < msgs.size(); k++) {
+        if (msgs[k].topic == topic) return false;
+    }
+    return true;
+}
+
+// The source's switch/on is driven true, retracted, then false; the target's switch/on
+// follows the two values and ignores the retraction.
+static void drive_and_retract(Recorder& rec) {
+    size_t mark = rec.size();
+    rec.publish(ROOT_T + "switch/on/set", "true");
+    REQUIRE(rec.wait_for(ROOT2_T + "switch/on", "true", mark) >= 0,
+            "the target's switch/on did not follow the source to true");
+
+    // The retained value removed: the source has no value, and the link keeps "true".
+    mark = rec.size();
+    rec.publish(ROOT_T + "switch/on", "", true);
+    REQUIRE(rec.wait_for(ROOT_T + "switch/on", "", mark) >= 0, "the retraction did not arrive");
+    sleep_ms(1500);
+    REQUIRE(none_since(rec, ROOT2_T + "switch/on/set", mark) &&
+                none_since(rec, ROOT2_T + "switch/on", mark),
+            "the retraction reached the target");
+
+    mark = rec.size();
+    rec.publish(ROOT_T + "switch/on/set", "false");
+    REQUIRE(rec.wait_for(ROOT2_T + "switch/on", "false", mark) >= 0,
+            "the target's switch/on did not follow the source to false after the retraction");
+}
+
+// A controller link copies one device's switch/on into another's, the target found by a
+// device-segment pattern once discovery settles; a retraction does not reach the target.
+static void case_link() {
+    Broker b;
+    b.start();
+    Recorder rec(b.port);
+    start_device(b.port);
+    start_device(b.port, DEVICE2_ID, "device2.log");
+    wait_ready(rec);
+    REQUIRE(rec.wait_for(ROOT2_T + "$state", "ready") >= 0, "the second device never got ready");
+
+    size_t mark = rec.size();
+    std::string out = g_dir + "/controller.out";
+    pid_t ctl = spawn({g_controller, "--host", "127.0.0.1", "--port", std::to_string(b.port),
+                       "--link", std::string(DEVICE_ID) + "/switch/on=>e2e-dev2*/switch/on",
+                       "--link-interval-ms", "200", "--duration-s", "30"},
+                      out);
+    // Bound: the current value (false) is sent to the target.
+    REQUIRE(rec.wait_for(ROOT2_T + "switch/on/set", "false", mark) >= 0,
+            "the controller link did not bind and send the current value");
+
+    drive_and_retract(rec);
+    stop(ctl, SIGTERM);
+
+    std::string text = read_file(out);
+    REQUIRE(text.find("LINK[link-1]: target bound to e2e-dev2 -> e2e-dev2/switch/on") !=
+                std::string::npos,
+            "no binding line in the controller's log");
+    printf("link: controller link bound e2e-dev2* after discovery settled, followed true and "
+           "false, ignored the retraction\n");
+}
+
+// A link inside a device: another device's switch/on, watched on the broker, drives this
+// device's own switch/on with no /set on the wire; a retraction does not reach it.
+static void case_link_device() {
+    Broker b;
+    b.start();
+    Recorder rec(b.port);
+    start_device(b.port);
+    wait_ready(rec);
+    start_device(b.port, DEVICE2_ID, "device2.log",
+                 {"--link", std::string(DEVICE_ID) + "/switch/on=>switch/on"});
+    REQUIRE(rec.wait_for(ROOT2_T + "$state", "ready") >= 0, "the second device never got ready");
+
+    drive_and_retract(rec);
+    REQUIRE(rec.find(ROOT2_T + "switch/on/set", nullptr) < 0,
+            "a link inside the device sent a /set over the broker");
+    std::string log = read_file(g_dir + "/device2.log");
+    REQUIRE(log.find("LINK[link-1]: source %1 = ebus/5/e2e-dev/switch/on (remote)") !=
+                std::string::npos,
+            "no remote-source line in the device's log");
+    // A forwarded retraction would reach the target's validation and be refused there.
+    REQUIRE(log.find("invalid boolean value ''") == std::string::npos,
+            "the retraction was delivered to the target");
+    printf("link_device: a device link followed another device's switch/on true and false, "
+           "ignored the retraction\n");
+}
+
 int main(int argc, char** argv) {
     if (argc < 2) {
         fprintf(stderr, "usage: %s <case> --mosquitto P --device P --controller P --workdir D\n",
@@ -455,7 +550,7 @@ int main(int argc, char** argv) {
     g_dir += "/" + which;
     mkdir(g_dir.substr(0, g_dir.rfind('/')).c_str(), 0755);
     mkdir(g_dir.c_str(), 0755);
-    for (const char* f : {"/device.log", "/mosquitto.log", "/controller.out"}) {
+    for (const char* f : {"/device.log", "/device2.log", "/mosquitto.log", "/controller.out"}) {
         unlink((g_dir + f).c_str());
     }
     atexit(kill_children);
@@ -467,6 +562,8 @@ int main(int argc, char** argv) {
     else if (which == "will") case_will();
     else if (which == "reconnect") case_reconnect();
     else if (which == "controller") case_controller();
+    else if (which == "link") case_link();
+    else if (which == "link_device") case_link_device();
     else {
         fprintf(stderr, "unknown case '%s'\n", which.c_str());
         return 2;
