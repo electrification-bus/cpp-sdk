@@ -4,6 +4,14 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+### Fixed
+
+- `Property::setValue(float)` published `nan`, `inf` or `-inf`, which the float payload grammar does not allow. `homie_format_float()` and `homie_format_double()` now return `false` with an empty string for a NaN or infinity, and `setValue()` logs and keeps the previous value. ([#27](https://github.com/electrification-bus/cpp-sdk/issues/27))
+
+### Added
+
+- `test_homie_float_vectors`: the 434 float32 vectors shared with python-sdk and rust-sdk.
+
 ## [0.7.0] - 2026-10-10
 
 ### Changed

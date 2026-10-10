@@ -245,6 +245,18 @@ static void test_subscribe_while_disconnected_does_nothing(void) {
     TEST_ASSERT_EQUAL_INT(0, settable_count());
 }
 
+static void test_non_finite_float_keeps_the_previous_value(void) {
+    static Property p;
+    add(p, "temp", "float");
+    p.setValue(21.4f);
+    p.setValue(__builtin_nanf(""));
+    p.setValue(__builtin_inff());
+    TEST_ASSERT_TRUE(p.has_value());
+    TEST_ASSERT_EQUAL_STRING("21.4", p.value());
+    TEST_ASSERT_TRUE(p.publish_value());
+    TEST_ASSERT_EQUAL_STRING("21.4", t.at(0).payload);
+}
+
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
@@ -261,5 +273,6 @@ int main(int argc, char** argv) {
     RUN_TEST(test_subscribe_registers_the_set_topic_at_qos_0);
     RUN_TEST(test_subscribe_retries_twice_then_gives_up);
     RUN_TEST(test_subscribe_while_disconnected_does_nothing);
+    RUN_TEST(test_non_finite_float_keeps_the_previous_value);
     return UNITY_END();
 }
