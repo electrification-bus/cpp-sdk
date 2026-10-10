@@ -16,7 +16,7 @@ A portable C++17 core for devices and controllers on the [Electrification Bus](h
 
 ## Status
 
-Version 0.7.0, alpha. Known limits:
+Version 0.7.1, alpha. Known limits:
 
 - The POSIX demo build has no TLS; it connects to plain-TCP brokers only.
 - The driver contract (`NodeEntity`, `NodeProperty`) is still in esp32-firmware ([why](doc/core.md#still-in-esp32-firmware)).
