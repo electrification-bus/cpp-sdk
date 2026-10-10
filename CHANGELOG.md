@@ -4,6 +4,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-10
+
 ### Changed
 
 - **Breaking:** `EbusLink::setup(EbusLink::CONTROLLER)` needs `ebus_link_enable_controller()` to have been called; without it the link logs and is disabled. Controller mode moves to `link/src/link_controller.cpp`, which only that call reaches, so a device that uses `EbusLink` no longer links the controller and its discovery table. On an ESP32-POE-ISO-16MB device with three device-mode links that saves 2,544 bytes of static RAM and 3,664 bytes of flash. ([#20](https://github.com/electrification-bus/cpp-sdk/issues/20))
@@ -78,7 +80,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 - The core's Unity suites, built and run with CMake and CTest.
 - `library.json`, so a PlatformIO project can add the core with a `lib_deps` git URL.
 
-[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/electrification-bus/cpp-sdk/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.3.0...v0.4.0
