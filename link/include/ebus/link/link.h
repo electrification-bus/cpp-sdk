@@ -32,6 +32,12 @@
 class Device;
 class EbusLink;
 
+// Makes EbusLink::CONTROLLER available: until it is called, setup(CONTROLLER) logs and
+// returns false. Call it once before the first controller link's setup(). It is defined
+// with the controller-mode code (link_controller.cpp), so a device build that never calls
+// it links neither that code nor the controller and its discovery table.
+void ebus_link_enable_controller();
+
 // One source of an EbusLink. In DEVICE mode a remote source's value is written by the
 // settable table's dispatch, which runs on the task that calls EbusLink::loop().
 struct EbusLinkSource {
@@ -57,10 +63,10 @@ class EbusLink {
     // DEVICE: the link runs in a device, whose root Device is passed to setup(). Two-part
     // references are that device's; a remote source is watched through the settable
     // table, and a remote target is published to its /set topic on the root's transport.
-    // CONTROLLER: the link runs alongside the controller (controller_init()). Every
-    // reference names a device; sources are read from the discovery cache, '*' binds
-    // against it, and the target is commanded with controller_set_property() only while
-    // it is ready.
+    // CONTROLLER: the link runs alongside the controller (controller_init()), after
+    // ebus_link_enable_controller(). Every reference names a device; sources are read
+    // from the discovery cache, '*' binds against it, and the target is commanded with
+    // controller_set_property() only while it is ready.
     enum Mode { DEVICE, CONTROLLER };
 
     // The strings are not copied and must outlive the link. `id` names it in log lines.
@@ -70,9 +76,10 @@ class EbusLink {
           _decimals(decimals), _interval_ms(interval_ms) {}
 
     // Parse the references and, in DEVICE mode, register each remote source's watch.
-    // DEVICE mode needs `root`; CONTROLLER mode ignores it. Returns false, having logged
-    // why, when the link is disabled. Call once, from the task that runs the settable
-    // table; the link must not move afterwards (the table holds pointers into it).
+    // DEVICE mode needs `root`; CONTROLLER mode ignores it and needs
+    // ebus_link_enable_controller(). Returns false, having logged why, when the link is
+    // disabled. Call once, from the task that runs the settable table; the link must not
+    // move afterwards (the table holds pointers into it).
     bool setup(Mode mode, Device* root = nullptr);
 
     // Read, render and deliver. Call from the main loop: in DEVICE mode on the task that
@@ -92,12 +99,22 @@ class EbusLink {
     const char* last_sent() const { return _have_sent ? _sent : nullptr; }
 
  private:
+    friend void ebus_link_enable_controller();
+    // CONTROLLER mode's half of loop() and deliver(), in link_controller.cpp.
+    struct ControllerOps {
+        bool (EbusLink::*poll)(uint32_t now);
+        bool (EbusLink::*deliver)(const char* text);
+    };
+    static const ControllerOps* _controller_ops;   // null until enabled
+
     static bool on_remote_value(void* ctx, const char* value);
     bool parse_target();
     bool add_source(const char* ref, size_t len);
     bool resolve_wildcards();
     void resolve_source(int i, bool remind, bool* said);
     bool resolve_target(bool remind, bool* said);
+    bool controller_poll(uint32_t now);
+    bool controller_deliver(const char* text);
     void read_sources();
     bool deliver(const char* text);
 

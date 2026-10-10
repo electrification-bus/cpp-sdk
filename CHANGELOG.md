@@ -4,6 +4,10 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** `EbusLink::setup(EbusLink::CONTROLLER)` needs `ebus_link_enable_controller()` to have been called; without it the link logs and is disabled. Controller mode moves to `link/src/link_controller.cpp`, which only that call reaches, so a device that uses `EbusLink` no longer links the controller and its discovery table. On an ESP32-POE-ISO-16MB device with three device-mode links that saves 2,544 bytes of static RAM and 3,664 bytes of flash. ([#20](https://github.com/electrification-bus/cpp-sdk/issues/20))
+
 ## [0.5.0] - 2026-10-10
 
 ### Added
