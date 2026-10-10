@@ -47,9 +47,11 @@ Pull requests are welcome.
 - **Don't hard-wrap Markdown prose.** Write each paragraph in docs as a single continuous line; reserve hard breaks for list items, headings, code fences, and tables.
 - One commit per logical change is fine; we don't require squash or any particular branch naming.
 
-## Keep your personal LLM config out of the repo
+## LLM coding assistants
 
-If you use an LLM coding assistant (Claude Code, Cursor, Aider, etc.), do **not** commit your personal LLM config files (`CLAUDE.md`, `AGENTS.md`, `.claude/`, `.cursor/`, etc.). Different contributors have different setups. Keep them in a separate shadow repo symlinked into your working tree, or add the paths to `.git/info/exclude`. The project `.gitignore` already lists the common ones defensively. If you have a use case for project-wide LLM context that *should* be tracked, discuss with the maintainers first.
+[`AGENTS.md`](AGENTS.md) holds the shared instructions for LLM coding assistants (Codex, Cursor, GitHub Copilot and others read it; [`CLAUDE.md`](CLAUDE.md) imports it for Claude Code). Change it by pull request when the project's conventions change.
+
+Keep your personal configuration out of the repo: `CLAUDE.local.md` (which Claude Code loads alongside `CLAUDE.md`), `.claude/`, `.cursor/` and the like are gitignored. To version them anyway, keep them in a separate private "shadow" repository and symlink them into your working tree, for example `ln -s ~/path/to/shadow-repo/cpp-sdk/CLAUDE.local.md CLAUDE.local.md`; for a file you don't need to version, `.git/info/exclude` works too.
 
 ## Code of conduct
 
