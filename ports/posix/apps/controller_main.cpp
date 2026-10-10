@@ -59,10 +59,9 @@ static std::map<std::string, uint32_t> seen_description;
 static std::map<std::string, std::string> seen_value;
 
 static void report() {
-    ControllerDevice infos[MAX_DISCOVERED_DEVICES];
-    int n = controller_list_device_info(infos, MAX_DISCOVERED_DEVICES);
+    int n = controller_device_count();
     for (int i = 0; i < n; i++) {
-        ControllerDevice& info = infos[i];
+        const ControllerDevice& info = *controller_device_at(i);
         Device* dev = info.device;
         if (!dev) continue;
         std::string id = dev->getId();
@@ -85,7 +84,7 @@ static void report() {
             Node* node = dev->nodeAt(ni);
             for (int pi = 0; pi < node->numProperties(); pi++) {
                 Property* p = node->propertyAt(pi);
-                if (!p->value()[0]) continue;   // no value yet
+                if (!p->has_value()) continue;   // none yet, or retracted
                 std::string key = id + "/" + node->id() + "/" + p->id();
                 auto v = seen_value.find(key);
                 if (v == seen_value.end() || v->second != p->value()) {

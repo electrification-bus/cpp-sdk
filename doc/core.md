@@ -48,6 +48,22 @@ The POSIX port in [`ports/posix/`](../ports/posix/) implements the same pieces o
 
 `publishStateTree()`, which re-asserts each `$state` over the Last Will's `lost`, suffices only when the broker is known to have kept its retained store. The POSIX demo device republishes the whole tree this way on every reconnect (`on_connected()` in [`ports/posix/apps/device_main.cpp`](../ports/posix/apps/device_main.cpp)).
 
+## Controller values
+
+`controller_get_property()` returns the controller's copy of a remote property. Its `value()` is the last payload received, exactly as published (a float published as `21.37` reads back as `21.37`), and `getBoolValue()`, `getIntValue()` and `getFloatValue()` parse that text. `has_value()` says whether the broker currently holds a value:
+
+| Payload | `has_value()` | `value()` |
+| --- | --- | --- |
+| None received yet | false | `""` |
+| Non-empty | true | the payload |
+| Zero-length (the retained value removed) | false | unchanged: the last payload |
+| A single 0x00 byte, string property (Homie 5's empty string) | true | `""` |
+| A single 0x00 byte, any other datatype | unchanged | unchanged (ignored) |
+
+A consumer that shows the current state checks `has_value()`; one that wants the last good value, such as a link that keeps driving its target, reads `value()`. The device side already behaves this way: `clearValue()` clears `has_value()` and leaves `value()`.
+
+`controller_device_count()` and `controller_device_at(i)` walk the discovered devices in place; `controller_list_device_info()` copies every `ControllerDevice` into the caller's array.
+
 ## Rules for code in the core
 
 - `ebus_homie` (`homie/`) includes only standard headers, ArduinoJson, its own headers and `ebus_mqtt`'s; `ebus_mqtt` (`mqtt/`) and `ebus_discovery` (`discovery/`) each include only standard headers and their own. CI enforces all three.

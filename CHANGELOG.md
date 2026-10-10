@@ -4,6 +4,16 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+### Added
+
+- `Property::has_value()`, and for the controller's copy of a remote property `Property::store_received()` and `Property::forget_value()` ([doc/core.md](doc/core.md#controller-values)).
+- `controller_device_count()` and `controller_device_at()`, which return a pointer into the controller's device table, so a caller need not copy every `ControllerDevice` with `controller_list_device_info()`.
+
+### Fixed
+
+- A zero-length payload on a property topic (the retained value removed) set the controller's copy to false, 0 or 0.000000 by datatype. It now clears `has_value()` and leaves `value()` at the last payload.
+- The controller's `value()` of a received property is the payload as published. It was reformatted by datatype, so a float `21.37` read back as `21.370001`.
+
 ## [0.4.0] - 2026-10-09
 
 ### Added
