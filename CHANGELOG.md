@@ -4,6 +4,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-10
+
 ### Added
 
 - `ebus_link`, a CMake target over `ebus_homie` (`link/`, [doc/link.md](doc/link.md)): `EbusLink` copies up to three property values, local or remote, into a settable property, with a format, rounding, change detection, retry backoff, and the last good value kept on a retraction. In a device (`EbusLink::DEVICE`) it reads the root `Device`'s properties, watches remote ones through the settable table and sets a local target with `deliver_local_set()`; in a controller (`EbusLink::CONTROLLER`) it reads the discovery cache, binds `*` in the device or node part once discovery has settled, refuses an ambiguous match, and commands the target only while it is `ready`. The logic comes from esp32-sdk's `logic/link`, by Doug Mendonça. `ebus_core` links it, PlatformIO builds `link/src/`, and a CI step compiles it with only its own and `ebus_homie`'s include directories.
@@ -72,7 +74,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 - The core's Unity suites, built and run with CMake and CTest.
 - `library.json`, so a PlatformIO project can add the core with a `lib_deps` git URL.
 
-[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/electrification-bus/cpp-sdk/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.2.0...v0.3.0
