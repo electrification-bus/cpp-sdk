@@ -295,10 +295,10 @@ bool homie_validate_duration(const char* payload) {
 // Shortest round trip: the fewest significant digits whose text reads back as `value`,
 // through strtof() for a float (nine digits always suffice) or strtod() for a double
 // (seventeen).
-static void format_shortest(double value, bool is_float, char* out, size_t n) {
+static bool format_shortest(double value, bool is_float, char* out, size_t n) {
     if (!isfinite(value)) {
-        snprintf(out, n, "%g", value);
-        return;
+        if (n > 0) out[0] = '\0';
+        return false;
     }
     char sci[32];
     const int max_prec = is_float ? 8 : 16;
@@ -346,12 +346,13 @@ static void format_shortest(double value, bool is_float, char* out, size_t n) {
         snprintf(buf + len, sizeof(buf) - len, "e%s%02d", exp10 < 0 ? "-" : "", abs(exp10));
     }
     snprintf(out, n, "%s", buf);
+    return true;
 }
 
-void homie_format_float(float value, char* out, size_t n) {
-    format_shortest(value, true, out, n);
+bool homie_format_float(float value, char* out, size_t n) {
+    return format_shortest(value, true, out, n);
 }
 
-void homie_format_double(double value, char* out, size_t n) {
-    format_shortest(value, false, out, n);
+bool homie_format_double(double value, char* out, size_t n) {
+    return format_shortest(value, false, out, n);
 }

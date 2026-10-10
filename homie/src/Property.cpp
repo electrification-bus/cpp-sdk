@@ -81,8 +81,14 @@ void Property::setValue(int64_t value) {
     _has_value = true;
 }
 void Property::setValue(float value) {
+    char text[32];
+    if (!homie_format_float(value, text, sizeof(text))) {
+        homie_logf("Property: '%s' - %f is not a float payload; keeping the previous value\n",
+                   _id, (double)value);
+        return;
+    }
     _floatValue = value;
-    homie_format_float(value, _value, sizeof(_value));
+    snprintf(_value, sizeof(_value), "%s", text);
     _has_value = true;
 }
 void Property::setValue(const char* value) {
