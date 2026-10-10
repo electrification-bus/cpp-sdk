@@ -674,6 +674,57 @@ static void test_duration_repeated_component_is_rejected(void) {
     TEST_ASSERT_FALSE(homie_validate_duration("PT1H2H"));
 }
 
+
+// ── float formatting ───────────────────────────────────────────────────────────────────
+
+static void expect_float(float value, const char* text) {
+    char out[32];
+    homie_format_float(value, out, sizeof(out));
+    TEST_ASSERT_EQUAL_STRING(text, out);
+}
+
+static void test_float_is_formatted_with_the_shortest_round_trip_digits(void) {
+    expect_float(21.4f, "21.4");
+    expect_float(21.37f, "21.37");
+    expect_float(-3.5f, "-3.5");
+    expect_float(123456789.0f, "123456790.0");
+}
+
+static void test_whole_float_keeps_one_fraction_digit(void) {
+    expect_float(40.0f, "40.0");
+    expect_float(0.0f, "0.0");
+    expect_float(-0.0f, "-0.0");
+}
+
+static void test_float_uses_an_exponent_outside_1e_minus4_to_1e16(void) {
+    expect_float(0.0001f, "0.0001");
+    expect_float(1e-5f, "1e-05");
+    expect_float(1e15f, "1000000000000000.0");
+    expect_float(1e16f, "1e16");
+    expect_float(3.4028235e38f, "3.4028235e38");
+}
+
+static void test_double_is_formatted_with_the_shortest_round_trip_digits(void) {
+    char out[32];
+    homie_format_double(0.1, out, sizeof(out));
+    TEST_ASSERT_EQUAL_STRING("0.1", out);
+    homie_format_double(12345678.9, out, sizeof(out));   // more digits than a float holds
+    TEST_ASSERT_EQUAL_STRING("12345678.9", out);
+    homie_format_double(1e22, out, sizeof(out));
+    TEST_ASSERT_EQUAL_STRING("1e22", out);
+}
+
+static void test_formatted_float_is_a_valid_float_payload(void) {
+    const float values[] = {21.4f, 1e-5f, 1e16f, -0.0f, 1.17549435e-38f};
+    for (float v : values) {
+        char out[32];
+        double parsed = 0;
+        homie_format_float(v, out, sizeof(out));
+        TEST_ASSERT_TRUE_MESSAGE(homie_parse_float_payload(out, &parsed), out);
+        TEST_ASSERT_TRUE((float)parsed == v);
+    }
+}
+
 int main(int, char**) {
     UNITY_BEGIN();
 
@@ -806,5 +857,11 @@ int main(int, char**) {
     RUN_TEST(test_duration_components_out_of_order_are_rejected);
     RUN_TEST(test_duration_repeated_component_is_rejected);
 
+
+    RUN_TEST(test_float_is_formatted_with_the_shortest_round_trip_digits);
+    RUN_TEST(test_whole_float_keeps_one_fraction_digit);
+    RUN_TEST(test_float_uses_an_exponent_outside_1e_minus4_to_1e16);
+    RUN_TEST(test_double_is_formatted_with_the_shortest_round_trip_digits);
+    RUN_TEST(test_formatted_float_is_a_valid_float_payload);
     return UNITY_END();
 }

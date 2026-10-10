@@ -82,7 +82,7 @@ void Property::setValue(int64_t value) {
 }
 void Property::setValue(float value) {
     _floatValue = value;
-    snprintf(_value, sizeof(_value), "%f", value);
+    homie_format_float(value, _value, sizeof(_value));
     _has_value = true;
 }
 void Property::setValue(const char* value) {

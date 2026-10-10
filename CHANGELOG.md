@@ -4,6 +4,10 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+### Changed
+
+- `Property::setValue(float)` publishes the shortest decimal that reads back as the same float, laid out like python-sdk's float text: `21.4`, `40.0`, `1e-05`, `1e16` instead of `21.400000`. The formatters are `homie_format_float()` and `homie_format_double()` in `ebus/homie/homie_datatype.h`.
+
 ## [0.6.0] - 2026-10-10
 
 ### Changed

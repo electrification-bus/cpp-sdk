@@ -1,4 +1,5 @@
 #include <ebus/homie/homie_datatype.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -287,4 +288,70 @@ bool homie_validate_duration(const char* payload) {
         p++;
     }
     return any;
+}
+
+// --- float formatting ---------------------------------------------------------
+
+// Shortest round trip: the fewest significant digits whose text reads back as `value`,
+// through strtof() for a float (nine digits always suffice) or strtod() for a double
+// (seventeen).
+static void format_shortest(double value, bool is_float, char* out, size_t n) {
+    if (!isfinite(value)) {
+        snprintf(out, n, "%g", value);
+        return;
+    }
+    char sci[32];
+    const int max_prec = is_float ? 8 : 16;
+    for (int prec = 0; prec <= max_prec; ++prec) {
+        snprintf(sci, sizeof(sci), "%.*e", prec, value);
+        if (is_float ? strtof(sci, NULL) == (float)value : strtod(sci, NULL) == value) break;
+    }
+    // sci is "[-]d[.ddd]e(+|-)XX": split it into sign, digits and the decimal exponent.
+    const char* p = sci;
+    bool negative = (*p == '-');
+    if (negative) ++p;
+    char digits[20];
+    int ndigits = 0;
+    for (; *p != 'e'; ++p) {
+        if (*p != '.') digits[ndigits++] = *p;
+    }
+    int exp10 = atoi(p + 1);
+    while (ndigits > 1 && digits[ndigits - 1] == '0') --ndigits;
+
+    size_t len = 0;
+    char buf[48];
+    if (negative) buf[len++] = '-';
+    if (exp10 >= -4 && exp10 < 16) {
+        if (exp10 < 0) {
+            buf[len++] = '0';
+            buf[len++] = '.';
+            for (int i = -1; i > exp10; --i) buf[len++] = '0';
+            for (int i = 0; i < ndigits; ++i) buf[len++] = digits[i];
+        } else {
+            for (int i = 0; i <= exp10; ++i) buf[len++] = (i < ndigits) ? digits[i] : '0';
+            buf[len++] = '.';
+            if (ndigits > exp10 + 1) {
+                for (int i = exp10 + 1; i < ndigits; ++i) buf[len++] = digits[i];
+            } else {
+                buf[len++] = '0';
+            }
+        }
+        buf[len] = '\0';
+    } else {
+        buf[len++] = digits[0];
+        if (ndigits > 1) {
+            buf[len++] = '.';
+            for (int i = 1; i < ndigits; ++i) buf[len++] = digits[i];
+        }
+        snprintf(buf + len, sizeof(buf) - len, "e%s%02d", exp10 < 0 ? "-" : "", abs(exp10));
+    }
+    snprintf(out, n, "%s", buf);
+}
+
+void homie_format_float(float value, char* out, size_t n) {
+    format_shortest(value, true, out, n);
+}
+
+void homie_format_double(double value, char* out, size_t n) {
+    format_shortest(value, false, out, n);
 }

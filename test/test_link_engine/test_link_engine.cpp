@@ -121,7 +121,7 @@ static void test_local_retraction_keeps_the_last_good_value(void) {
     temp.forget_value();
     tick(l, 1000);
     TEST_ASSERT_TRUE(l.source(0).has_value);
-    TEST_ASSERT_EQUAL_STRING("21.000000", l.source(0).value);
+    TEST_ASSERT_EQUAL_STRING("21.0", l.source(0).value);
     TEST_ASSERT_EQUAL_INT(1, published(LINE_T));
 }
 
