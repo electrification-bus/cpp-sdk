@@ -7,7 +7,7 @@ The eBus mDNS contract (framework.md, "Detail: mDNS Discovery") as code: the bro
 | `ebus/discovery/txt_records.h` | `EbusIdentity`, `TxtRecord`, and the builders for `_ebus._tcp`, `_device-info._tcp`, `_http._tcp` and `_telnet._tcp` |
 | `ebus/discovery/mdns_backend.h` | `MdnsBackend`, the interface a port implements: advertise, browse, resolve |
 | `ebus/discovery/broker_browse.h` | `broker_browse()` and `broker_reresolve()`, broker discovery over an `MdnsBackend` |
-| `ebus/discovery/broker_discovery.h` | Broker service names, DNS-SD types and default ports; the browse list (esp32-sdk's `mqtt.discover`); host name trimming; the re-resolve count |
+| `ebus/discovery/broker_discovery.h` | Broker service names, DNS-SD types and default ports; the browse list (esp32-firmware's `mqtt.discover`); host name trimming; the re-resolve count |
 | `ebus/discovery/mdns_strings.h` | Service types, TXT keys and fixed values |
 
 `<platform/broker_discovery.h>` and `<platform/mdns_strings.h>`, the earlier paths of two of them, forward to these headers.
@@ -49,15 +49,15 @@ The rules match the Python library's `Identity` and `HttpService`:
 - `ebus_version` defaults to `EBUS_SPEC_VERSION` (`0.9`), `path` to `/api/v1`, `homie_version` to `5`. The HTTP `version` (the API's OpenAPI `info.version`) is required.
 - A `key=value` string over 255 bytes (`TXT_TOO_LONG`), a key that is empty, not printable ASCII or holds `=` (`TXT_INVALID`), and a missing required value (`TXT_MISSING`) fail the build, which leaves the record empty.
 
-`homie_domain`, `homie_version` and `homie_roles` are not in framework.md 0.9; they are the keys SPAN panels advertise, and esp32-sdk advertises them too. `homie_roles` is `roles` restricted to `device` and `controller`.
+`homie_domain`, `homie_version` and `homie_roles` are not in framework.md 0.9; they are the keys SPAN panels advertise, and esp32-firmware advertises them too. `homie_roles` is `roles` restricted to `device` and `controller`.
 
 `txt_record_add()` appends a key the builders do not know, after a build; it refuses a key already in the record (keys compare case-insensitively, RFC 6763 6.4) and a full record. `txt_record_wire_size()` gives the bytes a record takes on the wire; RFC 6763 6.2 advises keeping it under 1300 (`EBUS_TXT_TOTAL_ADVISED`). `txt_find()` looks a key up in a record or in a browsed instance's pairs.
 
 ### Across implementations
 
-`test/test_discovery_txt` builds the records of the Python library's TXT tests and those esp32-sdk's `network.cpp` advertises, and expects the same pairs in the same order. Remaining differences:
+`test/test_discovery_txt` builds the records of the Python library's TXT tests and those esp32-firmware's `network.cpp` advertises, and expects the same pairs in the same order. Remaining differences:
 
-| Item | esp32-sdk | ebus-service-discovery | framework.md |
+| Item | esp32-firmware | ebus-service-discovery | framework.md |
 |---|---|---|---|
 | `_ebus._tcp` port | `mqtt.port` | the first HTTP port, else 0 | not specified |
 | `homie_*` keys | advertised | not advertised (an `extra_ebus_txt` can add them) | not defined |
@@ -86,13 +86,13 @@ class MdnsBackend {
 };
 ```
 
-Service types are full DNS-SD types (`_ebus._tcp`, `MDNS_TYPE_EBUS`; `broker_service_type()` for the brokers); a backend splits them as its stack needs. `advertise()` registers the service under the host name the port claimed, with that name as the instance name, as framework.md and esp32-sdk do. `browse()` passes each instance to the callback until it returns false; the instance's strings belong to the backend and last only for the call, so nothing is allocated on either side. `resolve()` takes the bare host name, without `.local`. Claiming the host name is part of each stack's own setup (`MDNS.begin()` on ESP32), so a port does it before using the backend.
+Service types are full DNS-SD types (`_ebus._tcp`, `MDNS_TYPE_EBUS`; `broker_service_type()` for the brokers); a backend splits them as its stack needs. `advertise()` registers the service under the host name the port claimed, with that name as the instance name, as framework.md and esp32-firmware do. `browse()` passes each instance to the callback until it returns false; the instance's strings belong to the backend and last only for the call, so nothing is allocated on either side. `resolve()` takes the bare host name, without `.local`. Claiming the host name is part of each stack's own setup (`MDNS.begin()` on ESP32), so a port does it before using the backend.
 
 ## Broker discovery
 
 `broker_browse(backend, list, timeout_ms, &found)` browses each service type of a `BrokerDiscoveryList` in order (the default is `_secure-mqtt._tcp`, then `_mqtt._tcp`) and takes the first instance that has an address. `found` holds the service, the address, the SRV port (the service's default port when the record has none) and the bare host name (empty when the SRV target is empty or does not fit). Repeating a browse that found nothing, and how often, is the caller's, since it needs a clock.
 
-After `BROKER_RERESOLVE_AFTER_FAILURES` consecutive failed reconnects (`broker_reconnect_failed()`), `broker_reresolve(backend, &found, timeout_ms)` sends one host query for `found.hostname`: `BROKER_RERESOLVE_MOVED` with the new address in `found`, `BROKER_RERESOLVE_UNCHANGED`, or `BROKER_RERESOLVE_FAILED`, which leaves `found` as it was. These are esp32-sdk's rules (`mdns_query_one_service()` and `mdns_reresolve_broker()`; its [doc/MDNS.md](https://github.com/electrification-bus/esp32-sdk/blob/main/doc/MDNS.md#broker-discovery)).
+After `BROKER_RERESOLVE_AFTER_FAILURES` consecutive failed reconnects (`broker_reconnect_failed()`), `broker_reresolve(backend, &found, timeout_ms)` sends one host query for `found.hostname`: `BROKER_RERESOLVE_MOVED` with the new address in `found`, `BROKER_RERESOLVE_UNCHANGED`, or `BROKER_RERESOLVE_FAILED`, which leaves `found` as it was. These are esp32-firmware's rules (`mdns_query_one_service()` and `mdns_reresolve_broker()`; its [doc/MDNS.md](https://github.com/electrification-bus/esp32-firmware/blob/main/doc/MDNS.md#broker-discovery)).
 
 ## A POSIX backend
 

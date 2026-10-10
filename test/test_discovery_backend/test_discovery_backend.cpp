@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Broker discovery over the MdnsBackend interface (ebus/discovery/broker_browse.h), and
 // advertising a built TXT record through it, against a fake backend. Builds against
-// ebus_discovery alone. The selection rules are esp32-sdk's mdns_query_one_service() and
+// ebus_discovery alone. The selection rules are esp32-firmware's mdns_query_one_service() and
 // mdns_reresolve_broker() (src/platform/network.cpp at 66abe5a).
 #include <unity.h>
 #include <ebus/discovery/broker_browse.h>

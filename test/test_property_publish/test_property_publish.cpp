@@ -144,7 +144,7 @@ static void test_refused_queue_publish_is_not_counted(void) {
     TEST_ASSERT_EQUAL_UINT32(0, p.queued_count());
 }
 
-// A port written before ebus_mqtt overrides only the Property overload (esp32-sdk's
+// A port written before ebus_mqtt overrides only the Property overload (esp32-firmware's
 // MqttClientTransport does); Property's queued publish must still reach it.
 class PropertyQueueTransport final : public HomieTransport {
  public:
