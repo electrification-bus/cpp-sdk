@@ -21,7 +21,6 @@ Version 0.7.1, alpha. Known limits:
 - The POSIX demo build has no TLS; it connects to plain-TCP brokers only.
 - The driver contract (`NodeEntity`, `NodeProperty`) is still in esp32-firmware ([why](doc/core.md#still-in-esp32-firmware)).
 - The code-first API has rough edges found while writing the POSIX demo: registering a settable property needs a live connection, and the controller has no change callback.
-- esp32-firmware is not public yet; links to it will resolve once it is.
 
 ## Quick start: the POSIX demo
 
