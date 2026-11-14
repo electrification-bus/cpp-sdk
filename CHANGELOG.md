@@ -4,6 +4,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-14
+
 ### Fixed
 
 - `Property::clearValue()` sends its retraction through the publish queue, behind any value queued before it, so a stale value can no longer land after the retraction. It publishes nothing when there is nothing to retract: no value held, none queued, and the last message sent was a retraction or nothing has been sent since boot. A driver that retracts on every failed read now retracts once. A port must implement `queue_publish()`, as the POSIX port and the ESP32 firmware do. ([#30](https://github.com/electrification-bus/cpp-sdk/issues/30))
@@ -100,7 +102,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 - The core's Unity suites, built and run with CMake and CTest.
 - `library.json`, so a PlatformIO project can add the core with a `lib_deps` git URL.
 
-[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/electrification-bus/cpp-sdk/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/electrification-bus/cpp-sdk/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.5.0...v0.6.0
