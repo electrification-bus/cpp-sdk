@@ -33,6 +33,7 @@ typedef struct {
     bool is_active;                  // Whether this slot is in use
     bool properties_subscribed;      // Whether its $description and property subscriptions are made
     uint32_t description_hash;       // FNV-1a of the last $description, to skip a repeat
+    bool rejected;                   // ran out of memory building it; its messages are ignored
     // Homie 5 nested topology (parsed from $description). Empty parent_id => root.
     // Stored as ids (not live pointers) because devices are discovered asynchronously
     // — a child's description may arrive before or after its parent's.

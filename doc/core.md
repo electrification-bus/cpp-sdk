@@ -68,7 +68,7 @@ A consumer that shows the current state checks `has_value()`; one that wants the
 
 - `ebus_homie` (`homie/`) includes only standard headers, ArduinoJson, its own headers and `ebus_mqtt`'s; `ebus_mqtt` (`mqtt/`) and `ebus_discovery` (`discovery/`) each include only standard headers and their own; `ebus_link` (`link/`) only standard headers, its own and `ebus_homie`'s. CI enforces all four.
 - No Arduino `String`, no STL containers, no lambdas: callers pass buffers.
-- No new dynamic allocation. What allocates today predates the move: `Device::addNode()` (each `Node`), `Device::addNodePropertiesFromConfigJson()` (each `Property`, controller path only), the `$description` buffer (`MAX_DATA_LEN` bytes, once, on first use), the controller's `Device` per discovered device, and ArduinoJson's `JsonDocument` pools.
+- No new dynamic allocation. What allocates today predates the move: `Device::addNode()` (each `Node`), `Device::addNodePropertiesFromConfigJson()` (each `Property`, controller path only), the `$description` buffer (`MAX_DATA_LEN` bytes, once, on first use), the controller's `Device` per discovered device, and ArduinoJson's `JsonDocument` pools. The controller's allocations use `new (std::nothrow)`: a device it cannot allocate or finish building is not tracked, and the failure is logged.
 - C++17, GCC or Clang (`__atomic` builtins, `__attribute__((format))`).
 
 ## Building

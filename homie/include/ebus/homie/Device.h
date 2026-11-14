@@ -45,7 +45,11 @@ class Device {
                   const PropertyDesc (&descs)[N], Property (&storage)[N]) {
         return addNode(id, name, type, descs, storage, N);
     }
-    void addNodePropertiesFromConfigJson(Node* n, JsonVariant node_json, bool subscribe = true);
+    // Allocates a Property per entry (the controller path). Returns false when one could
+    // not be allocated; the properties added before it stay, and out_of_memory() is set.
+    bool addNodePropertiesFromConfigJson(Node* n, JsonVariant node_json, bool subscribe = true);
+    // True once addNode() or addNodePropertiesFromConfigJson() failed to allocate.
+    bool out_of_memory() const { return _out_of_memory; }
     void setMQTTClient(HomieTransport* transport);
     HomieTransport* mqttClient() { return _transport; }  // children share the root's transport
     void mqttConnected();
@@ -143,6 +147,7 @@ class Device {
     DeviceState _state = DEVICE_STATE_INIT;
     HomieTransport* _transport = nullptr;
     int _num_nodes;
+    bool _out_of_memory = false;
 
     // Nested-device tree links (intrusive; null for a standalone/root device).
     Device* _parent       = nullptr;

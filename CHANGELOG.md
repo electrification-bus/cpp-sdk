@@ -4,6 +4,10 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+### Fixed
+
+- The controller no longer aborts when it runs out of memory. With exceptions enabled, as on the ESP32, a failed `new` of a discovered device's `Device`, `Node` or `Property` threw `std::bad_alloc` and nothing caught it. On an ESP32 without PSRAM, a controller on a broker with a few large devices aborted on every boot. These allocations now use `new (std::nothrow)`. A device the controller cannot allocate is not tracked; one it runs out of memory building from its `$description` is rejected, logged once, and its messages are ignored. `Device::addNodePropertiesFromConfigJson()` now returns `false` on such a failure, and `Device::out_of_memory()` reports it. Tracking only the devices a controller needs is #36; a budget is #37.
+
 ## [0.7.2] - 2026-11-14
 
 ### Fixed
