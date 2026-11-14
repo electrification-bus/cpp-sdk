@@ -3,6 +3,7 @@
 #include <ebus/homie/homie_json.h>   // property_from_dict / node_serialize_into
 #include <ebus/homie/homie_log.h>
 #include <ebus/homie/jsonUtils.h>
+#include <new>
 #include <stdio.h>
 #include <string.h>
 /*
@@ -32,11 +33,18 @@ Device::Device() {
     _state = DeviceState::DEVICE_STATE_INIT;
 }
 
-void Device::addNodePropertiesFromConfigJson(Node* n, JsonVariant node_json, bool subscribe) {
+bool Device::addNodePropertiesFromConfigJson(Node* n, JsonVariant node_json, bool subscribe) {
     JsonVariant props = node_json[HOMIE_PROPERTIES].as<JsonArray>();
     for(JsonVariant json_prop : props.as<JsonArray>()) {
       if (json_prop.is<JsonObject>()) {
-        Property* prop = new Property();
+        // nothrow: with exceptions on, a failed plain new throws and nothing catches it.
+        Property* prop = new (std::nothrow) Property();
+        if (!prop) {
+          homie_logf("Device '%s': ERROR no memory for a property of node '%s'\n", _id,
+                     n->id());
+          _out_of_memory = true;
+          return false;
+        }
         prop->setNode(n); // required: set the parent node on the property before anything else
         prop->setMQTTClient(_transport);
         JsonObject props_obj = json_prop.as<JsonObject>();
@@ -47,6 +55,7 @@ void Device::addNodePropertiesFromConfigJson(Node* n, JsonVariant node_json, boo
         }
       }
     }
+    return true;
 }
 
 void Device::init(const char* name, const char* id, const char* type, HomieTransport* transport) {
@@ -62,7 +71,12 @@ Node* Device::addNode(const char* id, const char* name, const char* type) {
         homie_logf("Device: ERROR node limit (%d) reached — '%s' NOT added\n", MAX_NODES, id);
         return nullptr;
     }
-    Node* n = new Node();
+    Node* n = new (std::nothrow) Node();
+    if (!n) {
+        homie_logf("Device: ERROR no memory for node '%s'\n", id);
+        _out_of_memory = true;
+        return nullptr;
+    }
     n->setDevice(this);
     n->setId(id);
     n->setName(name);
@@ -79,7 +93,12 @@ Node* Device::addNode(JsonVariant node, const char* topic) {
         homie_logf("Device: ERROR node limit (%d) reached — node NOT added\n", MAX_NODES);
         return nullptr;
     }
-    Node* n =  new Node();
+    Node* n = new (std::nothrow) Node();
+    if (!n) {
+        homie_logf("Device '%s': ERROR no memory for a node\n", _id);
+        _out_of_memory = true;
+        return nullptr;
+    }
     n->setDevice(this);
     if (jsonExists(node[HOMIE_ID])) n->setId(node[HOMIE_ID].as<const char*>());
     if (jsonExists(node[HOMIE_NAME])) n->setName(node[HOMIE_NAME].as<const char*>());

@@ -3,6 +3,7 @@
 #include <ebus/homie/homie.h>
 #include <ebus/homie/homie_clock.h>
 #include <ebus/homie/homie_log.h>
+#include <new>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -455,11 +456,7 @@ static void handle_state_message(const char* domain, const char* device_id, cons
 
     bool is_new = find_device_index(device_id) < 0;
     int idx = find_or_create_device(device_id);
-    if (idx < 0) {
-        homie_logf("CONTROLLER: Device table full (%d), cannot add device %s\n",
-                      MAX_DISCOVERED_DEVICES, device_id);
-        return;
-    }
+    if (idx < 0) return;   // logged by find_or_create_device()
 
     ControllerDevice* ctrl_dev = &_devices[idx];
 
@@ -490,6 +487,7 @@ static void handle_description_message(const char* domain, const char* device_id
     }
 
     ControllerDevice* ctrl_dev = &_devices[idx];
+    if (ctrl_dev->rejected) return;
 
     // Every re-subscribe (reconnect, recovery from a drop) brings the retained
     // $description again. Device has no way to drop a node, so building it twice would
@@ -522,6 +520,14 @@ static void handle_description_message(const char* domain, const char* device_id
     create_device_from_description(ctrl_dev, doc);
     ctrl_dev->has_description = true;
     ctrl_dev->description_hash = hash;
+    if (ctrl_dev->device->out_of_memory()) {
+        // What was built stays allocated until controller_reset(): Device does not free
+        // its nodes and properties.
+        ctrl_dev->rejected = true;
+        homie_logf("CONTROLLER: **ERROR -- out of memory building device %s from its "
+                   "$description; it is not tracked and its messages are ignored\n", device_id);
+        return;
+    }
 
     homie_logf("CONTROLLER: Device %s description received: %s (%s)\n",
                  device_id, ctrl_dev->device->type(), ctrl_dev->device->type());
@@ -531,6 +537,8 @@ static void handle_property_message(const char* domain, const char* device_id,
                                    const char* node_id, const char* property_id,
                                    const char* payload, size_t length) {
     (void)domain;   // the property is looked up by device id alone
+    int idx = find_device_index(device_id);
+    if (idx >= 0 && _devices[idx].rejected) return;
     // Get the property object
     Property* prop = controller_get_property(device_id, node_id, property_id);
     if (!prop) {
@@ -583,8 +591,12 @@ static int find_or_create_device(const char* device_id) {
     // Find empty slot
     for (int i = 0; i < MAX_DISCOVERED_DEVICES; i++) {
         if (!_devices[i].is_active) {
-            // Initialize new device
-            _devices[i].device = new Device();
+            // nothrow: with exceptions on, a failed plain new throws and nothing catches it.
+            _devices[i].device = new (std::nothrow) Device();
+            if (!_devices[i].device) {
+                homie_logf("CONTROLLER: **ERROR -- no memory for device %s\n", device_id);
+                return -1;
+            }
             _devices[i].device->setId(device_id);
             _devices[i].device->setMQTTClient(_transport);
             _devices[i].state = DEVICE_STATE_INIT;
@@ -593,6 +605,7 @@ static int find_or_create_device(const char* device_id) {
             _devices[i].has_description = false;
             _devices[i].properties_subscribed = false;
             _devices[i].description_hash = 0;
+            _devices[i].rejected = false;
             _devices[i].parent_id[0] = '\0';   // topology unknown until $description
             _devices[i].root_id[0] = '\0';
             _device_count++;
@@ -600,7 +613,9 @@ static int find_or_create_device(const char* device_id) {
         }
     }
 
-    return -1; // Table full
+    homie_logf("CONTROLLER: Device table full (%d), cannot add device %s\n",
+               MAX_DISCOVERED_DEVICES, device_id);
+    return -1;
 }
 
 // Copy a parent or root id from a $description. One over HOMIE_DEVICE_ID_MAX names no
@@ -644,6 +659,7 @@ static void create_device_from_description(ControllerDevice* ctrl_dev, JsonDocum
     if (doc["nodes"].is<JsonObject>()) {
         JsonObject nodes = doc["nodes"].as<JsonObject>();
         for (JsonPair node_pair : nodes) {
+            if (dev->out_of_memory()) break;   // the caller rejects the device
             const char* node_id = node_pair.key().c_str();
             JsonObject node_obj = node_pair.value().as<JsonObject>();
 
