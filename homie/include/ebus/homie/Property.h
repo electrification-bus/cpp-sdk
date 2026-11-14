@@ -150,7 +150,8 @@ private:
     // for a case (long JSON payloads) that is rare and republishes cheaply anyway.
     static const int PROPERTY_MEMO_MAX = 64;
     char _last_pub[PROPERTY_MEMO_MAX] = {0};
-    int  _last_pub_len = -1;          // -1 = nothing published on this topic yet
+    int  _last_pub_len = -1;          // -1 = nothing published on this topic yet; -2 = a
+                                      // value too long to memo; 0 = a retraction
     // Messages publish_queued() has enqueued that the queue has not yet sent or dropped.
     // While any are in flight the gate never suppresses: the memo describes the last one
     // SENT, and a still-queued different value would land after it.

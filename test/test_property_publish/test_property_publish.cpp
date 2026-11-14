@@ -2,6 +2,7 @@
 // the publish-on-change gate, the empty-string and retraction payloads, the queued path's
 // in-flight accounting, and the /set subscription with its retries.
 
+#include <string.h>
 #include <unity.h>
 #include <ebus/homie/Device.h>
 #include <ebus/homie/homie_settable.h>
@@ -98,14 +99,80 @@ static void test_clear_value_retracts_and_forgets_the_memo(void) {
 
     p.clearValue();
     TEST_ASSERT_EQUAL_INT(2, t.count());
-    TEST_ASSERT_EQUAL_STRING("homie/5/dev/n/temp", t.at(1).topic);
-    TEST_ASSERT_EQUAL_INT(0, t.at(1).length);
-    TEST_ASSERT_TRUE(t.at(1).retained);
+    const FakeTransport::Record* r = t.nth(FakeTransport::QUEUED, 0);
+    TEST_ASSERT_NOT_NULL(r);
+    TEST_ASSERT_EQUAL_STRING("homie/5/dev/n/temp", r->topic);
+    TEST_ASSERT_EQUAL_INT(0, r->length);
+    TEST_ASSERT_TRUE(r->retained);
+    TEST_ASSERT_EQUAL_INT(2, r->qos);
     TEST_ASSERT_FALSE(p.publish_value());   // no value until the next set
+    r->done(r->ctx, "", 0, true);
 
     p.setValue("1.5");
     p.publish_value();                      // same value as before, but the broker has none
     TEST_ASSERT_EQUAL_INT(3, t.count());
+}
+
+static void test_clear_value_again_publishes_nothing(void) {
+    static Property p;
+    add(p, "rh", "float");
+    p.setValue("40");
+    p.publish_value();
+    p.clearValue();
+    const FakeTransport::Record* r = t.nth(FakeTransport::QUEUED, 0);
+    r->done(r->ctx, "", 0, true);
+
+    p.clearValue();
+    p.clearValue();
+    TEST_ASSERT_EQUAL_INT(1, t.count_of(FakeTransport::QUEUED));
+}
+
+static void test_clear_value_with_nothing_published_publishes_nothing(void) {
+    static Property p;
+    add(p, "never", "float");
+
+    p.clearValue();
+    TEST_ASSERT_EQUAL_INT(0, t.count());
+}
+
+static void test_clear_value_queues_behind_a_queued_value(void) {
+    static Property p;
+    add(p, "volts2", "float");
+    p.setValue("12.5");
+    p.publish_queued();
+
+    p.clearValue();
+    TEST_ASSERT_EQUAL_INT(2, t.count_of(FakeTransport::QUEUED));
+    TEST_ASSERT_EQUAL_STRING("12.5", t.nth(FakeTransport::QUEUED, 0)->payload);
+    TEST_ASSERT_EQUAL_INT(0, t.nth(FakeTransport::QUEUED, 1)->length);
+    TEST_ASSERT_EQUAL_INT(0, t.count_of(FakeTransport::PUBLISH));
+}
+
+static void test_clear_value_retracts_a_value_too_long_to_memo(void) {
+    static Property p;
+    add(p, "blob", "string");
+    char long_value[100];
+    memset(long_value, 'x', sizeof(long_value) - 1);
+    long_value[sizeof(long_value) - 1] = '\0';
+    p.setValue(long_value);
+    p.publish_value();
+    p.forget_value();
+
+    p.clearValue();
+    TEST_ASSERT_EQUAL_INT(1, t.count_of(FakeTransport::QUEUED));
+}
+
+static void test_refused_retraction_is_retried(void) {
+    static Property p;
+    add(p, "amps", "float");
+    p.setValue("3");
+    p.publish_value();
+
+    t.queue_result = false;   // the fake reports the refusal through done(sent=false)
+    p.clearValue();
+    t.queue_result = true;
+    p.clearValue();
+    TEST_ASSERT_EQUAL_INT(2, t.count_of(FakeTransport::QUEUED));
 }
 
 static void test_queued_publish_is_not_gated_while_in_flight(void) {
@@ -266,6 +333,11 @@ int main(int argc, char** argv) {
     RUN_TEST(test_empty_string_is_one_nul_byte);
     RUN_TEST(test_no_value_publishes_nothing);
     RUN_TEST(test_clear_value_retracts_and_forgets_the_memo);
+    RUN_TEST(test_clear_value_again_publishes_nothing);
+    RUN_TEST(test_clear_value_with_nothing_published_publishes_nothing);
+    RUN_TEST(test_clear_value_queues_behind_a_queued_value);
+    RUN_TEST(test_clear_value_retracts_a_value_too_long_to_memo);
+    RUN_TEST(test_refused_retraction_is_retried);
     RUN_TEST(test_queued_publish_is_not_gated_while_in_flight);
     RUN_TEST(test_refused_queue_publish_is_not_counted);
     RUN_TEST(test_property_overload_override_still_receives_queued_publishes);

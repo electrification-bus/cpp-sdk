@@ -181,7 +181,7 @@ bool Property::gate_allows(const char* payload, int len, bool force) {
 }
 
 void Property::note_published(const char* payload, int len) {
-    if (len > PROPERTY_MEMO_MAX) { _last_pub_len = -1; return; }  // unmemoable: forget
+    if (len > PROPERTY_MEMO_MAX) { _last_pub_len = -2; return; }  // unmemoable: forget
     memcpy(_last_pub, payload, len);
     _last_pub_len = len;
 }
@@ -230,12 +230,22 @@ bool Property::publish_queued(bool force) {
 // Mark this property UNAVAILABLE: retract its retained topic (zero-length,
 // retained => MQTT delete) rather than publishing a sentinel value. Resets _has_value
 // so publish() won't re-emit the stale value until a fresh setValue().
+//
+// The retraction goes through the publish queue, behind any value queued before it, so a
+// stale value cannot land after it. It is skipped when there is nothing to retract: no
+// value held, none in the queue, and the last message sent was a retraction (memo length
+// 0) or nothing has been sent since boot (-1). A driver may therefore call this on
+// every failed read. The queue's report sets the memo to the empty payload, so the next
+// set() publishes even if it repeats the value the broker held before.
 void Property::clearValue() {
+    const bool queued = __atomic_load_n(&_in_flight, __ATOMIC_ACQUIRE) != 0;
+    if (!_has_value && !queued && (_last_pub_len == 0 || _last_pub_len == -1)) return;
     _has_value = false;
-    // Forget the memo: after a retraction the broker holds nothing, so the next set()
-    // must publish even if it happens to repeat the value that was there before.
-    _last_pub_len = -1;
-    if (_transport) _transport->publish(topic(), "", true, homie_qos(true));
+    if (!_transport) return;
+    __atomic_add_fetch(&_in_flight, 1, __ATOMIC_ACQ_REL);
+    if (_transport->queue_publish(topic(), "", 0, true, this)) {
+        __atomic_add_fetch(&_queued_count, 1, __ATOMIC_RELAXED);
+    }
 }
 
 void Property::store_received(const char* payload) {

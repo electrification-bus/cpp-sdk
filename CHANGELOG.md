@@ -4,6 +4,10 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+### Fixed
+
+- `Property::clearValue()` sends its retraction through the publish queue, behind any value queued before it, so a stale value can no longer land after the retraction. It publishes nothing when there is nothing to retract: no value held, none queued, and the last message sent was a retraction or nothing has been sent since boot. A driver that retracts on every failed read now retracts once. A port must implement `queue_publish()`, as the POSIX port and the ESP32 firmware do. ([#30](https://github.com/electrification-bus/cpp-sdk/issues/30))
+
 ## [0.7.1] - 2026-10-10
 
 ### Fixed
