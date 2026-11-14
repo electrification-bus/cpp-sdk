@@ -4,6 +4,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-11-14
+
 ### Fixed
 
 - The controller no longer aborts when it runs out of memory. With exceptions enabled, as on the ESP32, a failed `new` of a discovered device's `Device`, `Node` or `Property` threw `std::bad_alloc` and nothing caught it. On an ESP32 without PSRAM, a controller on a broker with a few large devices aborted on every boot. These allocations now use `new (std::nothrow)`. A device the controller cannot allocate is not tracked; one it runs out of memory building from its `$description` is rejected, logged once, and its messages are ignored. `Device::addNodePropertiesFromConfigJson()` now returns `false` on such a failure, and `Device::out_of_memory()` reports it. Tracking only the devices a controller needs is #36; a budget is #37.
@@ -106,7 +108,8 @@ All notable changes to `cpp-sdk` are recorded here. Format follows [Keep a Chang
 - The core's Unity suites, built and run with CMake and CTest.
 - `library.json`, so a PlatformIO project can add the core with a `lib_deps` git URL.
 
-[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/electrification-bus/cpp-sdk/compare/v0.7.3...HEAD
+[0.7.3]: https://github.com/electrification-bus/cpp-sdk/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/electrification-bus/cpp-sdk/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/electrification-bus/cpp-sdk/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/electrification-bus/cpp-sdk/compare/v0.6.0...v0.7.0
