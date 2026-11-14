@@ -132,12 +132,19 @@ struct Broker {
     pid_t pid = -1;
     void start() {
         if (!port) port = free_port();
-        std::string conf = g_dir + "/mosquitto.conf";
-        std::ofstream(conf) << "listener " << port << " 127.0.0.1\n"
-                            << "allow_anonymous true\n"
-                            << "persistence false\n";
-        pid = spawn({g_mosquitto, "-c", conf}, g_dir + "/mosquitto.log");
+        // No config file: without one, mosquitto 2.x listens on loopback only, allows
+        // anonymous clients and keeps no persistence, which is what the tests need. A file
+        // in the work directory is not an option on Ubuntu 26.04, whose AppArmor profile
+        // lets /usr/sbin/mosquitto read config only under /etc/mosquitto.
+        pid = spawn({g_mosquitto, "-p", std::to_string(port)}, g_dir + "/mosquitto.log");
         for (int i = 0; i < 250 && !port_open(port); i++) sleep_ms(20);
+        if (!port_open(port)) {
+            // The log says why; on a CI runner the work directory is gone afterwards.
+            std::ifstream log(g_dir + "/mosquitto.log");
+            std::stringstream text;
+            text << log.rdbuf();
+            fprintf(stderr, "mosquitto.log:\n%s\n", text.str().c_str());
+        }
         REQUIRE(port_open(port), "mosquitto did not listen on %d", port);
     }
     void stop_broker() { stop(pid, SIGTERM); }

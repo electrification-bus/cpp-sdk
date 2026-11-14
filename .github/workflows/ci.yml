@@ -98,8 +98,7 @@ jobs:
   # and end-to-end tests against a mosquitto each test starts on a free localhost port.
   posix-port:
     name: POSIX port (${{ matrix.cc }})
-    # Pinned: on ubuntu-26.04 the mosquitto the tests start never listens.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
